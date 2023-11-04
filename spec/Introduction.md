@@ -1,0 +1,4 @@
+- Gem lang is a language built for my Master thesis at Algebra University
+- Work officially starter 4th of November 2023
+- When it's going to conclude, no one knows
+- God speed captain
