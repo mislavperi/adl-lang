@@ -14,6 +14,24 @@ func main() {
 		panic(err)
 	}
 
+	const GEM = `
+    __________
+   /          \
+  /            \
+ / /\        /\ \
+/_/  \______/  \_\
+\ \   /    \   / /
+ \ \ /      \ / /
+  \ /        \ /
+   \          /
+    \        /
+     \      /
+      \    /
+       \  /
+	\/	
+`
+
+	fmt.Printf(GEM)
 	fmt.Printf("Hello %s! This is the Gem programming lanauage!\n", user.Username)
 	fmt.Printf("Feel free to type in some commands\n")
 	repl.Start(os.Stdin, os.Stdout)

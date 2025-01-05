@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/mislavperi/gem-lang/eval"
 	"github.com/mislavperi/gem-lang/lexer"
+	"github.com/mislavperi/gem-lang/object"
 	"github.com/mislavperi/gem-lang/parser"
 )
 
@@ -13,6 +15,7 @@ const PROMPT = ">>"
 
 func Start(in io.Reader, out io.Writer) {
 	scanner := bufio.NewScanner(in)
+	environment := object.NewEnvironment()
 
 	for {
 		fmt.Fprintf(out, PROMPT)
@@ -31,8 +34,12 @@ func Start(in io.Reader, out io.Writer) {
 			continue
 		}
 
-		io.WriteString(out, program.String())
-		io.WriteString(out, "\n")
+		evaluated := eval.Eval(program, environment)
+		if evaluated != nil {
+			io.WriteString(out, evaluated.Inspect())
+			io.WriteString(out, "\n")
+		}
+
 	}
 }
 
