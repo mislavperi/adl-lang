@@ -65,6 +65,13 @@ func (l *Lexer) NextToken() token.Token {
 		tok = newToken(token.LBRACE, l.character)
 	case '}':
 		tok = newToken(token.RBRACE, l.character)
+	case '"':
+		tok.Type = token.STRING
+		tok.Literal = l.readString()
+	case '[':
+		tok = newToken(token.LBRACKET, l.character)
+	case ']':
+		tok = newToken(token.RBRACKET, l.character)
 	case 0:
 		tok.Literal = ""
 		tok.Type = token.EOF
@@ -93,14 +100,6 @@ func (l *Lexer) readIdentifier() string {
 	return l.input[position:l.position]
 }
 
-func (l *Lexer) peekChar() byte {
-	if l.readPosition >= len(l.input) {
-		return 0
-	} else {
-		return l.input[l.readPosition]
-	}
-}
-
 func (l *Lexer) readChar() {
 	if l.readPosition >= len(l.input) {
 		l.character = 0
@@ -117,6 +116,25 @@ func (l *Lexer) readNumber() string {
 		l.readChar()
 	}
 	return l.input[position:l.position]
+}
+
+func (l *Lexer) readString() string {
+	position := l.position + 1
+	for {
+		l.readChar()
+		if l.character == '"' || l.character == 0 {
+			break
+		}
+	}
+	return l.input[position:l.position]
+}
+
+func (l *Lexer) peekChar() byte {
+	if l.readPosition >= len(l.input) {
+		return 0
+	} else {
+		return l.input[l.readPosition]
+	}
 }
 
 func (l *Lexer) skipWhitespace() {
