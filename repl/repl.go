@@ -7,6 +7,7 @@ import (
 
 	"github.com/mislavperi/gem-lang/compiler"
 	"github.com/mislavperi/gem-lang/lexer"
+	"github.com/mislavperi/gem-lang/object"
 	"github.com/mislavperi/gem-lang/parser"
 	"github.com/mislavperi/gem-lang/vm"
 )
@@ -15,6 +16,10 @@ const PROMPT = ">>"
 
 func Start(in io.Reader, out io.Writer) {
 	scanner := bufio.NewScanner(in)
+
+	constants := []object.Object{}
+	globals := make([]object.Object, vm.GlobalsSize)
+	symbolTable := compiler.NewSymbolTable()
 
 	for {
 		fmt.Fprintf(out, PROMPT)
@@ -33,14 +38,17 @@ func Start(in io.Reader, out io.Writer) {
 			continue
 		}
 
-		compiler := compiler.New()
+		compiler := compiler.NewWithState(symbolTable, constants)
 		err := compiler.Compile(program)
 		if err != nil {
 			fmt.Fprint(out, "Complidation failed:\n", err)
 			continue
 		}
 
-		machine := vm.New(compiler.Bytecode())
+		code := compiler.Bytecode()
+		constants = code.Constants
+
+		machine := vm.NewWithGlobalStore(code, globals)
 		err = machine.Run()
 		if err != nil {
 			fmt.Fprint(out, "Execution of bytecode failed:\n", err)
