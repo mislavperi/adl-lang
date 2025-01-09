@@ -52,7 +52,7 @@ func Start(in io.Reader, out io.Writer) {
 		code := compiler.Bytecode()
 		constants = code.Constants
 
-		machine := vm.NewWithGlobalStore(code, globals)
+		machine := vm.NewWithGlobalsStore(code, globals)
 		err = machine.Run()
 		if err != nil {
 			fmt.Fprint(out, "Execution of bytecode failed:\n", err)

@@ -29,7 +29,7 @@ var builtins = map[string]*object.Builtin{
 				return newError("wrong number of arguments, got=%d, want=1", len(args))
 			}
 			if args[0].Type() != object.ARRAY_OBJ {
-				return newError("argument to `first` must be an array, got %s", args[0].Type())
+				return newError("argument to `first` must be an ARRAY, got %s", args[0].Type())
 			}
 
 			arr := args[0].(*object.Array)
@@ -46,7 +46,7 @@ var builtins = map[string]*object.Builtin{
 				return newError("wrong number of arguments, got=%d, want=1", len(args))
 			}
 			if args[0].Type() != object.ARRAY_OBJ {
-				return newError("argument to `last` must be an array, got %s", args[0].Type())
+				return newError("argument to `last` must be an ARRAY, got %s", args[0].Type())
 			}
 
 			arr := args[0].(*object.Array)
@@ -63,7 +63,7 @@ var builtins = map[string]*object.Builtin{
 				return newError("wrong number of arguments, got=%d, want=2", len(args))
 			}
 			if args[0].Type() != object.ARRAY_OBJ {
-				return newError("argument to `rest` must be an array, got %s", args[0].Type())
+				return newError("argument to `rest` must be an ARRAY, got %s", args[0].Type())
 			}
 
 			arr := args[0].(*object.Array)
@@ -83,7 +83,7 @@ var builtins = map[string]*object.Builtin{
 				return newError("wrong number of arguments, got=%d, want=1", len(args))
 			}
 			if args[0].Type() != object.ARRAY_OBJ {
-				return newError("argument to `rest` must be an array, got %s", args[0].Type())
+				return newError("argument to `rest` must be an ARRAY, got %s", args[0].Type())
 			}
 
 			arr := args[0].(*object.Array)
