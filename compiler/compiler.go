@@ -7,12 +7,12 @@ import (
 	"github.com/mislavperi/gem-lang/ast"
 	"github.com/mislavperi/gem-lang/code"
 	"github.com/mislavperi/gem-lang/object"
+	symboltable "github.com/mislavperi/gem-lang/symbol_table"
 )
 
 type Compiler struct {
-	constants []object.Object
-
-	symbolTable *SymbolTable
+	constants   []object.Object
+	symbolTable *symboltable.SymbolTable
 
 	scopes     []CompilationScope
 	scopeIndex int
@@ -41,7 +41,7 @@ func New() *Compiler {
 		previousInstruction: EmmitedInstruction{},
 	}
 
-	symbolTable := NewSymbolTable()
+	symbolTable := symboltable.NewSymbolTable()
 
 	for index, builtin := range object.Builtins {
 		symbolTable.DefineBuiltin(index, builtin.Name)
@@ -55,7 +55,7 @@ func New() *Compiler {
 	}
 }
 
-func NewWithState(s *SymbolTable, constants []object.Object) *Compiler {
+func NewWithState(s *symboltable.SymbolTable, constants []object.Object) *Compiler {
 	compiler := New()
 	compiler.symbolTable = s
 	compiler.constants = constants
@@ -178,22 +178,22 @@ func (c *Compiler) Compile(node ast.Node) error {
 
 		}
 	case *ast.LetStatement:
-		symbol := c.symbolTable.Define(node.Name.Value)
+		symbolTable := c.symbolTable.Define(node.Name.Value)
 		if err := c.Compile(node.Value); err != nil {
 			return err
 		}
-		if symbol.Scope == GlobalScope {
-			c.emit(code.OpSetGlobal, symbol.Index)
+		if symbolTable.Scope == symboltable.GlobalScope {
+			c.emit(code.OpSetGlobal, symbolTable.Index)
 		} else {
-			c.emit(code.OpSetLocal, symbol.Index)
+			c.emit(code.OpSetLocal, symbolTable.Index)
 		}
 	case *ast.Identifier:
-		symbol, ok := c.symbolTable.Resolve(node.Value)
+		symbolTable, ok := c.symbolTable.Resolve(node.Value)
 		if !ok {
 			return fmt.Errorf("undefined variable %s", node.Value)
 		}
 
-		c.loadSymbol(symbol)
+		c.loadSymbol(symbolTable)
 
 	case *ast.StringLiteral:
 		str := &object.String{Value: node.Value}
@@ -259,7 +259,7 @@ func (c *Compiler) Compile(node ast.Node) error {
 		}
 
 		freeSymbols := c.symbolTable.FreeSymbols
-		numLocals := c.symbolTable.numDefinitions
+		numLocals := len(c.symbolTable.Store)
 		instructions := c.leaveScope()
 
 		for _, s := range freeSymbols {
@@ -363,7 +363,7 @@ func (c *Compiler) enterScope() {
 	c.scopes = append(c.scopes, scope)
 	c.scopeIndex++
 
-	c.symbolTable = NewEnclosedSymbolTable(c.symbolTable)
+	c.symbolTable = symboltable.NewEnclosedSymbolTable(c.symbolTable)
 }
 
 func (c *Compiler) leaveScope() code.Instructions {
@@ -390,17 +390,17 @@ func (c *Compiler) replaceLastPopWithReturn() {
 	c.scopes[c.scopeIndex].lastInstruction.Opcode = code.OpReturnValue
 }
 
-func (c *Compiler) loadSymbol(s Symbol) {
+func (c *Compiler) loadSymbol(s symboltable.Symbol) {
 	switch s.Scope {
-	case GlobalScope:
+	case symboltable.GlobalScope:
 		c.emit(code.OpGetGlobal, s.Index)
-	case LocalScope:
+	case symboltable.LocalScope:
 		c.emit(code.OpGetLocal, s.Index)
-	case BuiltinScope:
+	case symboltable.BuiltinScope:
 		c.emit(code.OpGetBuiltin, s.Index)
-	case FreeScope:
+	case symboltable.FreeScope:
 		c.emit(code.OpGetFree, s.Index)
-	case FnScope:
+	case symboltable.FnScope:
 		c.emit(code.OpCurrentClosure)
 	}
 }

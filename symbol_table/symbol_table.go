@@ -1,4 +1,4 @@
-package compiler
+package symboltable
 
 type SymbolScope string
 
@@ -20,14 +20,14 @@ type SymbolTable struct {
 	Outer       *SymbolTable
 	FreeSymbols []Symbol
 
-	store          map[string]Symbol
-	numDefinitions int
+	Store          map[string]Symbol
+	NumDefinitions int
 }
 
 func NewSymbolTable() *SymbolTable {
 	s := make(map[string]Symbol)
 	free := []Symbol{}
-	return &SymbolTable{store: s, FreeSymbols: free}
+	return &SymbolTable{Store: s, FreeSymbols: free}
 }
 
 func NewEnclosedSymbolTable(outer *SymbolTable) *SymbolTable {
@@ -37,7 +37,7 @@ func NewEnclosedSymbolTable(outer *SymbolTable) *SymbolTable {
 }
 
 func (st *SymbolTable) Define(name string) Symbol {
-	symbol := Symbol{Name: name, Index: st.numDefinitions, Scope: GlobalScope}
+	symbol := Symbol{Name: name, Index: st.NumDefinitions, Scope: GlobalScope}
 
 	if st.Outer == nil {
 		symbol.Scope = GlobalScope
@@ -45,13 +45,13 @@ func (st *SymbolTable) Define(name string) Symbol {
 		symbol.Scope = LocalScope
 	}
 
-	st.store[name] = symbol
-	st.numDefinitions++
+	st.Store[name] = symbol
+	st.NumDefinitions++
 	return symbol
 }
 
 func (st *SymbolTable) Resolve(name string) (Symbol, bool) {
-	obj, ok := st.store[name]
+	obj, ok := st.Store[name]
 	if !ok && st.Outer != nil {
 		obj, ok := st.Outer.Resolve(name)
 		if !ok {
@@ -70,7 +70,7 @@ func (st *SymbolTable) Resolve(name string) (Symbol, bool) {
 
 func (st *SymbolTable) DefineBuiltin(index int, name string) Symbol {
 	symbol := Symbol{Name: name, Index: index, Scope: BuiltinScope}
-	st.store[name] = symbol
+	st.Store[name] = symbol
 	return symbol
 }
 
@@ -80,12 +80,12 @@ func (st *SymbolTable) defineFree(original Symbol) Symbol {
 	symbol := Symbol{Name: original.Name, Index: len(st.FreeSymbols) - 1}
 	symbol.Scope = FreeScope
 
-	st.store[original.Name] = symbol
+	st.Store[original.Name] = symbol
 	return symbol
 }
 
 func (st *SymbolTable) DefineFunctionName(name string) Symbol {
 	symbol := Symbol{Name: name, Index: 0, Scope: FnScope}
-	st.store[name] = symbol
+	st.Store[name] = symbol
 	return symbol
 }

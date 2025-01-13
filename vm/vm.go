@@ -56,21 +56,21 @@ func NewWithGlobalStore(bytecode *compiler.Bytecode, s []object.Object) *VM {
 }
 
 func (vm *VM) Run() error {
-	var ip int
+	var instructonPointer int
 	var ins code.Instructions
 	var op code.Opcode
 
-	for vm.currentFrame().ip < len(vm.currentFrame().Instructions())-1 {
-		vm.currentFrame().ip++
+	for vm.currentFrame().instructonPointer < len(vm.currentFrame().Instructions())-1 {
+		vm.currentFrame().instructonPointer++
 
-		ip = vm.currentFrame().ip
+		instructonPointer = vm.currentFrame().instructonPointer
 		ins = vm.currentFrame().Instructions()
-		op = code.Opcode(ins[ip])
+		op = code.Opcode(ins[instructonPointer])
 
 		switch op {
 		case code.OpConstant:
-			constIndex := code.ReadUint16(ins[ip+1:])
-			vm.currentFrame().ip += 2
+			constIndex := code.ReadUint16(ins[instructonPointer+1:])
+			vm.currentFrame().instructonPointer += 2
 			err := vm.push(vm.constants[constIndex])
 			if err != nil {
 				return err
@@ -103,14 +103,14 @@ func (vm *VM) Run() error {
 				return err
 			}
 		case code.OpJump:
-			pos := int(code.ReadUint16(ins[ip+1:]))
-			vm.currentFrame().ip = pos - 1
+			pos := int(code.ReadUint16(ins[instructonPointer+1:]))
+			vm.currentFrame().instructonPointer = pos - 1
 		case code.OpJumpNotTruthy:
-			pos := int(code.ReadUint16(ins[ip+1:]))
-			vm.currentFrame().ip += 2
+			pos := int(code.ReadUint16(ins[instructonPointer+1:]))
+			vm.currentFrame().instructonPointer += 2
 			condition := vm.pop()
 			if !isTruthy(condition) {
-				vm.currentFrame().ip = pos - 1
+				vm.currentFrame().instructonPointer = pos - 1
 			}
 		case code.OpNull:
 			if err := vm.push(Null); err != nil {
@@ -119,27 +119,27 @@ func (vm *VM) Run() error {
 		case code.OpPop:
 			vm.pop()
 		case code.OpSetGlobal:
-			globalIndex := code.ReadUint16(ins[ip+1:])
-			vm.currentFrame().ip += 2
+			globalIndex := code.ReadUint16(ins[instructonPointer+1:])
+			vm.currentFrame().instructonPointer += 2
 			vm.globals[globalIndex] = vm.pop()
 		case code.OpGetGlobal:
-			globalIndex := code.ReadUint16(ins[ip+1:])
-			vm.currentFrame().ip += 2
+			globalIndex := code.ReadUint16(ins[instructonPointer+1:])
+			vm.currentFrame().instructonPointer += 2
 
 			if err := vm.push(vm.globals[globalIndex]); err != nil {
 				return err
 			}
 		case code.OpArray:
-			numElements := int(code.ReadUint16(ins[ip+1:]))
-			vm.currentFrame().ip += 2
+			numElements := int(code.ReadUint16(ins[instructonPointer+1:]))
+			vm.currentFrame().instructonPointer += 2
 			array := vm.buildArray(vm.stackPointer-numElements, vm.stackPointer)
 			vm.stackPointer = vm.stackPointer - numElements
 			if err := vm.push(array); err != nil {
 				return err
 			}
 		case code.OpHash:
-			numElements := int(code.ReadUint16(ins[ip+1:]))
-			vm.currentFrame().ip += 2
+			numElements := int(code.ReadUint16(ins[instructonPointer+1:]))
+			vm.currentFrame().instructonPointer += 2
 
 			hash, err := vm.buildHash(vm.stackPointer-numElements, vm.stackPointer)
 			if err != nil {
@@ -175,21 +175,21 @@ func (vm *VM) Run() error {
 				return err
 			}
 		case code.OpCall:
-			numArgs := code.ReadUint8(ins[ip+1:])
-			vm.currentFrame().ip += 1
+			numArgs := code.ReadUint8(ins[instructonPointer+1:])
+			vm.currentFrame().instructonPointer += 1
 
 			if err := vm.executeCall(int(numArgs)); err != nil {
 				return err
 			}
 		case code.OpSetLocal:
-			localIndex := code.ReadUint8(ins[ip+1:])
-			vm.currentFrame().ip += 1
+			localIndex := code.ReadUint8(ins[instructonPointer+1:])
+			vm.currentFrame().instructonPointer += 1
 
 			frame := vm.currentFrame()
 			vm.stack[frame.basePointer+int(localIndex)] = vm.pop()
 		case code.OpGetLocal:
-			localIndex := code.ReadUint8(ins[ip+1:])
-			vm.currentFrame().ip += 1
+			localIndex := code.ReadUint8(ins[instructonPointer+1:])
+			vm.currentFrame().instructonPointer += 1
 
 			frame := vm.currentFrame()
 			if err := vm.push(vm.stack[frame.basePointer+int(localIndex)]); err != nil {
@@ -197,8 +197,8 @@ func (vm *VM) Run() error {
 				return err
 			}
 		case code.OpGetBuiltin:
-			builtinIndex := code.ReadUint8(ins[ip+1:])
-			vm.currentFrame().ip += 1
+			builtinIndex := code.ReadUint8(ins[instructonPointer+1:])
+			vm.currentFrame().instructonPointer += 1
 
 			definition := object.Builtins[builtinIndex]
 
@@ -207,9 +207,9 @@ func (vm *VM) Run() error {
 				return err
 			}
 		case code.OpClosure:
-			constIndex := code.ReadUint16(ins[ip+1:])
-			numFree := code.ReadUint8(ins[ip+3:])
-			vm.currentFrame().ip += 3
+			constIndex := code.ReadUint16(ins[instructonPointer+1:])
+			numFree := code.ReadUint8(ins[instructonPointer+3:])
+			vm.currentFrame().instructonPointer += 3
 
 			err := vm.pushClosure(int(constIndex), int(numFree))
 			if err != nil {
@@ -217,17 +217,17 @@ func (vm *VM) Run() error {
 			}
 
 		case code.OpGetFree:
-			freeIndex := code.ReadUint8(ins[ip+1:])
-			vm.currentFrame().ip += 1
+			freeIndex := code.ReadUint8(ins[instructonPointer+1:])
+			vm.currentFrame().instructonPointer += 1
 
-			currentClosure := vm.currentFrame().cl
+			currentClosure := vm.currentFrame().closure
 			err := vm.push(currentClosure.Free[freeIndex])
 			if err != nil {
 				return err
 			}
 
 		case code.OpCurrentClosure:
-			currentClosure := vm.currentFrame().cl
+			currentClosure := vm.currentFrame().closure
 			err := vm.push(currentClosure)
 			if err != nil {
 				return err
@@ -461,16 +461,16 @@ func (vm *VM) callBuiltin(builtin *object.Builtin, argumentNumber int) error {
 	return nil
 }
 
-func (vm *VM) callClosure(cl *object.Closure, argumentNumbers int) error {
-	if argumentNumbers != cl.Fn.NumParameters {
+func (vm *VM) callClosure(closure *object.Closure, argumentNumbers int) error {
+	if argumentNumbers != closure.Fn.NumParameters {
 		return fmt.Errorf("wrong number of arguments: want=%d, got=%d",
-			cl.Fn.NumParameters, argumentNumbers)
+			closure.Fn.NumParameters, argumentNumbers)
 	}
 
-	frame := NewFrame(cl, vm.stackPointer-argumentNumbers)
+	frame := NewFrame(closure, vm.stackPointer-argumentNumbers)
 	vm.pushFrame(frame)
 
-	vm.stackPointer = frame.basePointer + cl.Fn.NumLocals
+	vm.stackPointer = frame.basePointer + closure.Fn.NumLocals
 
 	return nil
 }

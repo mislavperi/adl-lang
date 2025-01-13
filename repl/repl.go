@@ -9,6 +9,7 @@ import (
 	"github.com/mislavperi/gem-lang/lexer"
 	"github.com/mislavperi/gem-lang/object"
 	"github.com/mislavperi/gem-lang/parser"
+	symboltable "github.com/mislavperi/gem-lang/symbol_table"
 	"github.com/mislavperi/gem-lang/vm"
 )
 
@@ -19,14 +20,14 @@ func Start(in io.Reader, out io.Writer) {
 
 	constants := []object.Object{}
 	globals := make([]object.Object, vm.GlobalsSize)
-	symbolTable := compiler.NewSymbolTable()
+	symbolTable := symboltable.NewSymbolTable()
 
 	for index, builtin := range object.Builtins {
 		symbolTable.DefineBuiltin(index, builtin.Name)
 	}
 
 	for {
-		fmt.Fprintf(out, PROMPT)
+		fmt.Fprint(out, PROMPT)
 		scanned := scanner.Scan()
 		if !scanned {
 			return

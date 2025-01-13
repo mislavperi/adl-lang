@@ -28,7 +28,7 @@ func (ins Instructions) String() string {
 }
 
 // formatInstruction formats the instruction with its operands.
-func (ins Instructions) formatInstruction(def *Definition, operands []int) string {
+func (ins Instructions) formatInstruction(def *BytecodeDefinition, operands []int) string {
 	if len(operands) != len(def.OperandWidths) {
 		return fmt.Sprintf("ERROR: operand len %d does not match defined %d\n", len(operands), len(def.OperandWidths))
 	}
@@ -80,19 +80,19 @@ const (
 	OpGetFree
 )
 
-type Definition struct {
+type BytecodeDefinition struct {
 	Name          string
 	OperandWidths []int
 }
 
 // Global variable for opcode definitions.
-var definitions = map[Opcode]*Definition{
+var definitions = map[Opcode]*BytecodeDefinition{
 	OpConstant:       {"OpConstant", []int{2}},
+	OpPop:            {"OpPop", []int{}},
 	OpAdd:            {"OpAdd", []int{}},
 	OpSub:            {"OpSub", []int{}},
 	OpMul:            {"OpMul", []int{}},
 	OpDiv:            {"OpDiv", []int{}},
-	OpPop:            {"OpPop", []int{}},
 	OpTrue:           {"OpTrue", []int{}},
 	OpFalse:          {"OpFalse", []int{}},
 	OpEqual:          {"OpEqual", []int{}},
@@ -120,7 +120,7 @@ var definitions = map[Opcode]*Definition{
 }
 
 // Lookup finds the definition for a given opcode.
-func Lookup(op byte) (*Definition, error) {
+func Lookup(op byte) (*BytecodeDefinition, error) {
 	if def, ok := definitions[Opcode(op)]; ok {
 		return def, nil
 	}
@@ -154,7 +154,7 @@ func Make(op Opcode, operands ...int) []byte {
 }
 
 // ReadOperands reads the operands for a given instruction definition.
-func ReadOperands(def *Definition, ins Instructions) ([]int, int) {
+func ReadOperands(def *BytecodeDefinition, ins Instructions) ([]int, int) {
 	operands := make([]int, len(def.OperandWidths))
 	offset := 0
 
