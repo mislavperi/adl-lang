@@ -430,16 +430,16 @@ func runCompilerTests(t *testing.T, tests []compilerTestCase) {
 func TestStringExpressions(t *testing.T) {
 	tests := []compilerTestCase{
 		{
-			input:             `"monkey"`,
-			expectedConstants: []interface{}{"monkey"},
+			input:             `"lang"`,
+			expectedConstants: []interface{}{"lang"},
 			expectedInstructions: []code.Instructions{
 				code.Make(code.OpConstant, 0),
 				code.Make(code.OpPop),
 			},
 		},
 		{
-			input:             `"mon" + "key"`,
-			expectedConstants: []interface{}{"mon", "key"},
+			input:             `"la" + "ng"`,
+			expectedConstants: []interface{}{"la", "ng"},
 			expectedInstructions: []code.Instructions{
 				code.Make(code.OpConstant, 0),
 				code.Make(code.OpConstant, 1),

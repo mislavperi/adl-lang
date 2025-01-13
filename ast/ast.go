@@ -8,30 +8,41 @@ import (
 	"github.com/mislavperi/gem-lang/token"
 )
 
+// Node represents a node in the AST and provides methods for token interaction and string representation.
 type Node interface {
 	TokenLiteral() string
 	String() string
 }
 
+// Statement is an interface for AST statement nodes.
 type Statement interface {
 	Node
-	statementNode()
+	isStatement()
 }
 
+// Expression is an interface for AST expression nodes.
 type Expression interface {
 	Node
-	expressionNode()
+	isExpression()
 }
 
-type Identifier struct {
+// BaseNode is an embedded struct to reduce code duplication for TokenLiteral and String methods.
+type BaseNode struct {
 	Token token.Token
+}
+
+func (b *BaseNode) TokenLiteral() string { return b.Token.Literal }
+
+// Identifier represents an identifier node in the AST.
+type Identifier struct {
+	BaseNode
 	Value string
 }
 
-func (i *Identifier) expressionNode()      {}
-func (i *Identifier) TokenLiteral() string { return i.Token.Literal }
-func (i *Identifier) String() string       { return i.Value }
+func (i *Identifier) isExpression()  {}
+func (i *Identifier) String() string { return i.Value }
 
+// Program is the root node of AST, containing a set of statements.
 type Program struct {
 	Statements []Statement
 }
@@ -39,68 +50,56 @@ type Program struct {
 func (p *Program) TokenLiteral() string {
 	if len(p.Statements) > 0 {
 		return p.Statements[0].TokenLiteral()
-	} else {
-		return ""
 	}
+	return ""
 }
 
 func (p *Program) String() string {
-	var out bytes.Buffer
-
-	for _, s := range p.Statements {
-		out.WriteString(s.String())
+	var output bytes.Buffer
+	for _, stmt := range p.Statements {
+		output.WriteString(stmt.String())
 	}
-
-	return out.String()
+	return output.String()
 }
 
+// LetStatement represents a let statement node in the AST.
 type LetStatement struct {
-	Token token.Token
+	BaseNode
 	Name  *Identifier
 	Value Expression
 }
 
-func (ls *LetStatement) statementNode()       {}
-func (ls *LetStatement) TokenLiteral() string { return ls.Token.Literal }
+func (ls *LetStatement) isStatement() {}
 func (ls *LetStatement) String() string {
-	var out bytes.Buffer
-
-	out.WriteString(ls.TokenLiteral() + " ")
-	out.WriteString(ls.Name.String())
-	out.WriteString(" = ")
-
-	if ls.Value != nil {
-		out.WriteString(ls.Value.String())
-	}
-
-	out.WriteString(";")
-	return out.String()
+	var output bytes.Buffer
+	output.WriteString(fmt.Sprintf("%s %s = %s;", ls.TokenLiteral(), ls.Name.String(), ls.Value.String()))
+	return output.String()
 }
 
+// ReturnStatement represents a return statement node in the AST.
 type ReturnStatement struct {
-	Token       token.Token
+	BaseNode
 	ReturnValue Expression
 }
 
-func (rs *ReturnStatement) statementNode()       {}
-func (rs *ReturnStatement) TokenLiteral() string { return rs.Token.Literal }
+func (rs *ReturnStatement) isStatement() {}
 func (rs *ReturnStatement) String() string {
-	var out bytes.Buffer
-	out.WriteString(rs.TokenLiteral() + " ")
+	var output bytes.Buffer
+	output.WriteString(rs.TokenLiteral())
 	if rs.ReturnValue != nil {
-		out.WriteString(rs.ReturnValue.String())
+		output.WriteString(" " + rs.ReturnValue.String())
 	}
-	out.WriteString(";")
-	return out.String()
+	output.WriteString(";")
+	return output.String()
 }
 
+// ExpressionStatement represents a standalone expression node in the AST.
 type ExpressionStatement struct {
-	Token      token.Token
+	BaseNode
 	Expression Expression
 }
 
-func (es *ExpressionStatement) statementNode()       {}
-func (es *ExpressionStatement) TokenLiteral() string { return es.Token.Literal }
+func (es *ExpressionStatement) isStatement() {}
 func (es *ExpressionStatement) String() string {
 	if es.Expression != nil {
 		return es.Expression.String()
@@ -108,220 +107,165 @@ func (es *ExpressionStatement) String() string {
 	return ""
 }
 
+// IntegerLiteral represents an integer literal node in the AST.
 type IntegerLiteral struct {
-	Token token.Token
+	BaseNode
 	Value int64
 }
 
-func (il *IntegerLiteral) expressionNode()      {}
-func (il *IntegerLiteral) TokenLiteral() string { return il.Token.Literal }
-func (il *IntegerLiteral) String() string       { return il.Token.Literal }
+func (il *IntegerLiteral) isExpression()  {}
+func (il *IntegerLiteral) String() string { return il.Token.Literal }
 
+// PrefixExpression represents a prefix expression node in the AST.
 type PrefixExpression struct {
-	Token    token.Token
+	BaseNode
 	Operator string
 	Right    Expression
 }
 
-func (pe *PrefixExpression) expressionNode()      {}
-func (pe *PrefixExpression) TokenLiteral() string { return pe.Token.Literal }
+func (pe *PrefixExpression) isExpression() {}
 func (pe *PrefixExpression) String() string {
-	var out bytes.Buffer
-
-	out.WriteString("(")
-	out.WriteString(pe.Operator)
-	out.WriteString(pe.Right.String())
-	out.WriteString(")")
-
-	return out.String()
+	return fmt.Sprintf("(%s%s)", pe.Operator, pe.Right.String())
 }
 
+// InfixExpression represents an infix expression node in the AST.
 type InfixExpression struct {
-	Token    token.Token
+	BaseNode
 	Left     Expression
 	Operator string
 	Right    Expression
 }
 
-func (ie *InfixExpression) expressionNode()      {}
-func (ie *InfixExpression) TokenLiteral() string { return ie.Token.Literal }
+func (ie *InfixExpression) isExpression() {}
 func (ie *InfixExpression) String() string {
-	var out bytes.Buffer
-
-	out.WriteString("(")
-	out.WriteString(ie.Left.String())
-	out.WriteString(" " + ie.Operator + " ")
-	out.WriteString(ie.Right.String())
-	out.WriteString(")")
-
-	return out.String()
+	return fmt.Sprintf("(%s %s %s)", ie.Left.String(), ie.Operator, ie.Right.String())
 }
 
+// Boolean represents a boolean node in the AST.
 type Boolean struct {
-	Token token.Token
+	BaseNode
 	Value bool
 }
 
-func (b *Boolean) expressionNode()      {}
-func (b *Boolean) TokenLiteral() string { return b.Token.Literal }
-func (b *Boolean) String() string       { return b.Token.Literal }
+func (b *Boolean) isExpression()  {}
+func (b *Boolean) String() string { return b.Token.Literal }
 
+// BlockStatement is a series of statements enclosed in a block in the AST.
 type BlockStatement struct {
-	Token      token.Token
+	BaseNode
 	Statements []Statement
 }
 
-func (bs *BlockStatement) statementNode()       {}
-func (bs *BlockStatement) TokenLiteral() string { return bs.Token.Literal }
+func (bs *BlockStatement) isStatement() {}
 func (bs *BlockStatement) String() string {
-	var out bytes.Buffer
-
-	for _, s := range bs.Statements {
-		out.WriteString(s.String())
+	var output bytes.Buffer
+	for _, stmt := range bs.Statements {
+		output.WriteString(stmt.String())
 	}
-
-	return out.String()
+	return output.String()
 }
 
+// IfExpression represents an if expression node in the AST.
 type IfExpression struct {
-	Token       token.Token
+	BaseNode
 	Condition   Expression
 	Consequence *BlockStatement
 	Alternative *BlockStatement
 }
 
-func (ie *IfExpression) expressionNode()      {}
-func (ie *IfExpression) TokenLiteral() string { return ie.Token.Literal }
+func (ie *IfExpression) isExpression() {}
 func (ie *IfExpression) String() string {
-	var out bytes.Buffer
-
-	out.WriteString("if")
-	out.WriteString(ie.Condition.String())
-	out.WriteString(" ")
-	out.WriteString(ie.Consequence.String())
-
+	var output bytes.Buffer
+	output.WriteString(fmt.Sprintf("if %s %s", ie.Condition.String(), ie.Consequence.String()))
 	if ie.Alternative != nil {
-		out.WriteString("else ")
-		out.WriteString(ie.Alternative.String())
+		output.WriteString(" else " + ie.Alternative.String())
 	}
-
-	return out.String()
+	return output.String()
 }
 
+// FnLiteral represents a function literal node in the AST.
 type FnLiteral struct {
-	Token      token.Token
+	BaseNode
 	Parameters []*Identifier
 	Body       *BlockStatement
 	Name       string
 }
 
-func (fl *FnLiteral) expressionNode()      {}
-func (fl *FnLiteral) TokenLiteral() string { return fl.Token.Literal }
+func (fl *FnLiteral) isExpression() {}
 func (fl *FnLiteral) String() string {
-	var out bytes.Buffer
-
-	params := []string{}
-	for _, p := range fl.Parameters {
-		params = append(params, p.String())
+	params := make([]string, len(fl.Parameters))
+	for i, param := range fl.Parameters {
+		params[i] = param.String()
 	}
-
-	out.WriteString(fl.TokenLiteral())
 	if fl.Name != "" {
-		out.WriteString(fmt.Sprintf("<%s>", fl.Name))
+		return fmt.Sprintf("%s<%s>(%s) %s", fl.TokenLiteral(), fl.Name, strings.Join(params, ", "), fl.Body.String())
 	}
-	out.WriteString("(")
-	out.WriteString(strings.Join(params, ", "))
-	out.WriteString(") ")
-	out.WriteString(fl.Body.String())
-
-	return out.String()
+	return fmt.Sprintf("%s(%s) %s", fl.TokenLiteral(), strings.Join(params, ", "), fl.Body.String())
 }
 
+// CallExpression represents a call expression in the AST.
 type CallExpression struct {
-	Token     token.Token
+	BaseNode
 	Function  Expression
 	Arguments []Expression
 }
 
-func (ce *CallExpression) expressionNode()      {}
-func (ce *CallExpression) TokenLiteral() string { return ce.Token.Literal }
+func (ce *CallExpression) isExpression() {}
 func (ce *CallExpression) String() string {
-	var out bytes.Buffer
-
-	args := []string{}
-	for _, a := range ce.Arguments {
-		args = append(args, a.String())
+	args := make([]string, len(ce.Arguments))
+	for i, arg := range ce.Arguments {
+		args[i] = arg.String()
 	}
-
-	out.WriteString(ce.Function.String())
-	out.WriteString("(")
-	out.WriteString(strings.Join(args, ", "))
-	out.WriteString(")")
-
-	return out.String()
+	return fmt.Sprintf("%s(%s)", ce.Function.String(), strings.Join(args, ", "))
 }
 
+// StringLiteral represents a string literal in the AST.
 type StringLiteral struct {
-	Token token.Token
+	BaseNode
 	Value string
 }
 
-func (sl *StringLiteral) expressionNode()      {}
-func (sl *StringLiteral) TokenLiteral() string { return sl.Token.Literal }
-func (sl *StringLiteral) String() string       { return sl.Token.Literal }
+func (sl *StringLiteral) isExpression()  {}
+func (sl *StringLiteral) String() string { return sl.Token.Literal }
 
+// ArrayLiteral represents an array literal in the AST.
 type ArrayLiteral struct {
-	Token    token.Token
+	BaseNode
 	Elements []Expression
 }
 
-func (al *ArrayLiteral) expressionNode()      {}
-func (al *ArrayLiteral) TokenLiteral() string { return al.Token.Literal }
+func (al *ArrayLiteral) isExpression() {}
 func (al *ArrayLiteral) String() string {
-	var out bytes.Buffer
-	elements := []string{}
-	for _, el := range al.Elements {
-		elements = append(elements, el.String())
+	elements := make([]string, len(al.Elements))
+	for i, el := range al.Elements {
+		elements[i] = el.String()
 	}
-	out.WriteString("[")
-	out.WriteString(strings.Join(elements, ", "))
-	out.WriteString("]")
-	return out.String()
+	return fmt.Sprintf("[%s]", strings.Join(elements, ", "))
 }
 
+// IndexExpression represents an index operation in the AST.
 type IndexExpression struct {
-	Token token.Token
+	BaseNode
 	Left  Expression
 	Index Expression
 }
 
-func (ie *IndexExpression) expressionNode()      {}
-func (ie *IndexExpression) TokenLiteral() string { return ie.Token.Literal }
+func (ie *IndexExpression) isExpression() {}
 func (ie *IndexExpression) String() string {
-	var out bytes.Buffer
-	out.WriteString("(")
-	out.WriteString(ie.Left.String())
-	out.WriteString("[")
-	out.WriteString(ie.Index.String())
-	out.WriteString("])")
-	return out.String()
+	return fmt.Sprintf("(%s[%s])", ie.Left.String(), ie.Index.String())
 }
 
+// HashLiteral represents a hash map literal in the AST.
 type HashLiteral struct {
-	Token token.Token
+	BaseNode
 	Pairs map[Expression]Expression
 }
 
-func (hl *HashLiteral) expressionNode()      {}
-func (hl *HashLiteral) TokenLiteral() string { return hl.Token.Literal }
+func (hl *HashLiteral) isExpression() {}
 func (hl *HashLiteral) String() string {
-	var out bytes.Buffer
-	pairs := []string{}
+	pairs := make([]string, 0, len(hl.Pairs))
 	for key, value := range hl.Pairs {
-		pairs = append(pairs, key.String()+":"+value.String())
+		pairs = append(pairs, fmt.Sprintf("%s:%s", key.String(), value.String()))
 	}
-	out.WriteString("{")
-	out.WriteString(strings.Join(pairs, ", "))
-	out.WriteString("}")
-	return out.String()
+	return fmt.Sprintf("{%s}", strings.Join(pairs, ", "))
 }

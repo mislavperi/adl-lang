@@ -93,7 +93,7 @@ var Builtins = []struct {
 				arr := args[0].(*Array)
 				length := len(arr.Elements)
 				if length > 0 {
-					restArray := make([]Object, length-1, length-1)
+					restArray := make([]Object, length-1)
 					copy(restArray, arr.Elements[1:length])
 					return &Array{Elements: restArray}
 				}
@@ -118,7 +118,7 @@ var Builtins = []struct {
 				arr := args[0].(*Array)
 				length := len(arr.Elements)
 
-				newArray := make([]Object, length+1, length+1)
+				newArray := make([]Object, length+1)
 				copy(newArray, arr.Elements)
 				newArray[length] = args[1]
 

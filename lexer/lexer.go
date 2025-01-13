@@ -20,7 +20,7 @@ func New(input string) *Lexer {
 func (l *Lexer) NextToken() token.Token {
 	var tok token.Token
 
-	l.skipWhitespace()
+	l.advancePastWhitespace()
 
 	switch l.character {
 	case '=':
@@ -30,12 +30,12 @@ func (l *Lexer) NextToken() token.Token {
 			literal := string(character) + string(l.character)
 			tok = token.Token{Type: token.EQ, Literal: literal}
 		} else {
-			tok = newToken(token.ASSIGN, l.character)
+			tok = token.Token{Type: token.ASSIGN, Literal: string(l.character)}
 		}
 	case '+':
-		tok = newToken(token.PLUS, l.character)
+		tok = token.Token{Type: token.PLUS, Literal: string(l.character)}
 	case '-':
-		tok = newToken(token.MINUS, l.character)
+		tok = token.Token{Type: token.MINUS, Literal: string(l.character)}
 	case '!':
 		if l.peekChar() == '=' {
 			character := l.character
@@ -43,58 +43,55 @@ func (l *Lexer) NextToken() token.Token {
 			literal := string(character) + string(l.character)
 			tok = token.Token{Type: token.NOT_EQ, Literal: literal}
 		} else {
-			tok = newToken(token.BANG, l.character)
+			tok = token.Token{Type: token.BANG, Literal: string(l.character)}
 		}
 	case '/':
-		tok = newToken(token.SLASH, l.character)
+		tok = token.Token{Type: token.SLASH, Literal: string(l.character)}
 	case '*':
-		tok = newToken(token.ASTERISK, l.character)
+		tok = token.Token{Type: token.ASTERISK, Literal: string(l.character)}
 	case '<':
-		tok = newToken(token.LT, l.character)
+		tok = token.Token{Type: token.LT, Literal: string(l.character)}
 	case '>':
-		tok = newToken(token.GT, l.character)
+		tok = token.Token{Type: token.GT, Literal: string(l.character)}
 	case ';':
-		tok = newToken(token.SEMICOLON, l.character)
+		tok = token.Token{Type: token.SEMICOLON, Literal: string(l.character)}
 	case '(':
-		tok = newToken(token.LPAREN, l.character)
+		tok = token.Token{Type: token.LPAREN, Literal: string(l.character)}
 	case ')':
-		tok = newToken(token.RPAREN, l.character)
+		tok = token.Token{Type: token.RPAREN, Literal: string(l.character)}
 	case ',':
-		tok = newToken(token.COMMA, l.character)
+		tok = token.Token{Type: token.COMMA, Literal: string(l.character)}
 	case '{':
-		tok = newToken(token.LBRACE, l.character)
+		tok = token.Token{Type: token.LBRACE, Literal: string(l.character)}
 	case '}':
-		tok = newToken(token.RBRACE, l.character)
+		tok = token.Token{Type: token.RBRACE, Literal: string(l.character)}
 	case '"':
-		tok.Type = token.STRING
-		tok.Literal = l.readString()
+		tok = token.Token{Type: token.STRING, Literal: l.readString()}
 	case '[':
-		tok = newToken(token.LBRACKET, l.character)
+		tok = token.Token{Type: token.LBRACKET, Literal: string(l.character)}
 	case ']':
-		tok = newToken(token.RBRACKET, l.character)
+		tok = token.Token{Type: token.RBRACKET, Literal: string(l.character)}
 	case ':':
-		tok = newToken(token.COLON, l.character)
+		tok = token.Token{Type: token.COLON, Literal: string(l.character)}
 	case 0:
-		tok.Literal = ""
-		tok.Type = token.EOF
+		tok = token.Token{Type: token.EOF, Literal: ""}
 	default:
 		if isLetter(l.character) {
-			tok.Literal = l.readIdentifier()
+			tok.Literal = l.consumeLiteral()
 			tok.Type = token.LookupIdentifier(tok.Literal)
 			return tok
 		} else if isDigit(l.character) {
-			tok.Type = token.INT
-			tok.Literal = l.readNumber()
+			tok = token.Token{Type: token.INT, Literal: l.readNumber()}
 			return tok
 		} else {
-			tok = newToken(token.ILLEGAL, l.character)
+			tok = token.Token{Type: token.ILLEGAL, Literal: string(l.character)}
 		}
 	}
 	l.readChar()
 	return tok
 }
 
-func (l *Lexer) readIdentifier() string {
+func (l *Lexer) consumeLiteral() string {
 	position := l.position
 	for isLetter(l.character) {
 		l.readChar()
@@ -139,20 +136,23 @@ func (l *Lexer) peekChar() byte {
 	}
 }
 
-func (l *Lexer) skipWhitespace() {
-	for l.character == ' ' || l.character == '\t' || l.character == '\n' || l.character == '\r' {
+func (l *Lexer) advancePastWhitespace() {
+	for {
+		if !isWhitespace(l.character) {
+			break
+		}
 		l.readChar()
 	}
 }
 
+func isWhitespace(character byte) bool {
+	return character == 32 || character == 9 || character == 10 || character == 13
+}
+
 func isLetter(character byte) bool {
-	return 'a' <= character && character <= 'z' || 'A' <= character && character <= 'Z' || character == '_'
+	return (character >= 65 && character <= 90) || (character >= 97 && character <= 122) || character == 95
 }
 
 func isDigit(character byte) bool {
-	return '0' <= character && character <= '9'
-}
-
-func newToken(tokenType token.TokenType, character byte) token.Token {
-	return token.Token{Type: tokenType, Literal: string(character)}
+	return character >= 48 && character <= 57
 }

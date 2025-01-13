@@ -21,8 +21,8 @@ type VM struct {
 
 	globals []object.Object
 
-	stack []object.Object
-	sp    int
+	stack        []object.Object
+	stackPointer int
 
 	frames      []*Frame
 	framesIndex int
@@ -41,8 +41,8 @@ func New(bytecode *compiler.Bytecode) *VM {
 
 		globals: make([]object.Object, GlobalsSize),
 
-		stack: make([]object.Object, StackSize),
-		sp:    0,
+		stack:        make([]object.Object, StackSize),
+		stackPointer: 0,
 
 		frames:      frames,
 		framesIndex: 1,
@@ -132,8 +132,8 @@ func (vm *VM) Run() error {
 		case code.OpArray:
 			numElements := int(code.ReadUint16(ins[ip+1:]))
 			vm.currentFrame().ip += 2
-			array := vm.buildArray(vm.sp-numElements, vm.sp)
-			vm.sp = vm.sp - numElements
+			array := vm.buildArray(vm.stackPointer-numElements, vm.stackPointer)
+			vm.stackPointer = vm.stackPointer - numElements
 			if err := vm.push(array); err != nil {
 				return err
 			}
@@ -141,11 +141,11 @@ func (vm *VM) Run() error {
 			numElements := int(code.ReadUint16(ins[ip+1:]))
 			vm.currentFrame().ip += 2
 
-			hash, err := vm.buildHash(vm.sp-numElements, vm.sp)
+			hash, err := vm.buildHash(vm.stackPointer-numElements, vm.stackPointer)
 			if err != nil {
 				return err
 			}
-			vm.sp = vm.sp - numElements
+			vm.stackPointer = vm.stackPointer - numElements
 
 			err = vm.push(hash)
 			if err != nil {
@@ -162,14 +162,14 @@ func (vm *VM) Run() error {
 			returnValue := vm.pop()
 
 			frame := vm.popFrame()
-			vm.sp = frame.basePointer - 1
+			vm.stackPointer = frame.basePointer - 1
 
 			if err := vm.push(returnValue); err != nil {
 				return err
 			}
 		case code.OpReturn:
 			frame := vm.popFrame()
-			vm.sp = frame.basePointer - 1
+			vm.stackPointer = frame.basePointer - 1
 
 			if err := vm.push(Null); err != nil {
 				return err
@@ -239,23 +239,23 @@ func (vm *VM) Run() error {
 }
 
 func (vm *VM) LastPoppedStackElem() object.Object {
-	return vm.stack[vm.sp]
+	return vm.stack[vm.stackPointer]
 }
 
 func (vm *VM) push(o object.Object) error {
-	if vm.sp >= StackSize {
+	if vm.stackPointer >= StackSize {
 		return fmt.Errorf("stack overflow")
 	}
 
-	vm.stack[vm.sp] = o
-	vm.sp++
+	vm.stack[vm.stackPointer] = o
+	vm.stackPointer++
 
 	return nil
 }
 
 func (vm *VM) pop() object.Object {
-	o := vm.stack[vm.sp-1]
-	vm.sp--
+	o := vm.stack[vm.stackPointer-1]
+	vm.stackPointer--
 	return o
 }
 
@@ -274,10 +274,8 @@ func (vm *VM) executeBinaryOperation(op code.Opcode) error {
 	case leftType == object.STRING_OBJ && right.Type() == object.STRING_OBJ:
 		return vm.executeBinaryStringOperation(left, op, right)
 	default:
-		fmt.Errorf("unsupported type for binary operation: %s %s", leftType, rightType)
+		return fmt.Errorf("unsupported type for binary operation: %s %s", leftType, rightType)
 	}
-
-	return fmt.Errorf("unsupported types for binary operation: %s %s", leftType, rightType)
 }
 
 func (vm *VM) executeBinaryIntegerOperation(left object.Object, operator code.Opcode, right object.Object) error {
@@ -449,10 +447,10 @@ func (vm *VM) buildHash(startIndex int, endIndex int) (object.Object, error) {
 }
 
 func (vm *VM) callBuiltin(builtin *object.Builtin, argumentNumber int) error {
-	args := vm.stack[vm.sp-argumentNumber : vm.sp]
+	args := vm.stack[vm.stackPointer-argumentNumber : vm.stackPointer]
 
 	results := builtin.Fn(args...)
-	vm.sp = vm.sp - argumentNumber - 1
+	vm.stackPointer = vm.stackPointer - argumentNumber - 1
 
 	if results != nil {
 		vm.push(results)
@@ -469,16 +467,16 @@ func (vm *VM) callClosure(cl *object.Closure, argumentNumbers int) error {
 			cl.Fn.NumParameters, argumentNumbers)
 	}
 
-	frame := NewFrame(cl, vm.sp-argumentNumbers)
+	frame := NewFrame(cl, vm.stackPointer-argumentNumbers)
 	vm.pushFrame(frame)
 
-	vm.sp = frame.basePointer + cl.Fn.NumLocals
+	vm.stackPointer = frame.basePointer + cl.Fn.NumLocals
 
 	return nil
 }
 
 func (vm *VM) executeCall(argumentNumber int) error {
-	calle := vm.stack[vm.sp-1-argumentNumber]
+	calle := vm.stack[vm.stackPointer-1-argumentNumber]
 	switch calle := calle.(type) {
 	case *object.Closure:
 		return vm.callClosure(calle, argumentNumber)
@@ -498,9 +496,9 @@ func (vm *VM) pushClosure(constIndex int, numFree int) error {
 
 	free := make([]object.Object, numFree)
 	for i := 0; i < numFree; i++ {
-		free[i] = vm.stack[vm.sp-numFree+i]
+		free[i] = vm.stack[vm.stackPointer-numFree+i]
 	}
-	vm.sp = vm.sp - numFree
+	vm.stackPointer = vm.stackPointer - numFree
 
 	closure := &object.Closure{Fn: fn, Free: free}
 	return vm.push(closure)

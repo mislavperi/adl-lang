@@ -10,7 +10,7 @@ func NewEnvironment() *Environment {
 	return &Environment{store: s, outer: nil}
 }
 
-func NewEnclosedEnviornment(outer *Environment) *Environment {
+func NewEnclosedEnvironment(outer *Environment) *Environment {
 	env := NewEnvironment()
 	env.outer = outer
 	return env
