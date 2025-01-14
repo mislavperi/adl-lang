@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/mislavperi/gem-lang/ast"
-	"github.com/mislavperi/gem-lang/lexer"
-	"github.com/mislavperi/gem-lang/token"
+	"github.com/mislavperi/adl-lang/ast"
+	"github.com/mislavperi/adl-lang/lexer"
+	"github.com/mislavperi/adl-lang/token"
 )
 
 const (

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/mislavperi/gem-lang/token"
+	"github.com/mislavperi/adl-lang/token"
 )
 
 // Node represents a node in the AST and provides methods for token interaction and string representation.

@@ -3,7 +3,7 @@ package eval
 import (
 	"fmt"
 
-	"github.com/mislavperi/gem-lang/object"
+	"github.com/mislavperi/adl-lang/object"
 )
 
 var builtins = map[string]*object.Builtin{

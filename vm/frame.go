@@ -1,8 +1,8 @@
 package vm
 
 import (
-	"github.com/mislavperi/gem-lang/code"
-	"github.com/mislavperi/gem-lang/object"
+	"github.com/mislavperi/adl-lang/code"
+	"github.com/mislavperi/adl-lang/object"
 )
 
 type Frame struct {

@@ -3,9 +3,9 @@ package vm
 import (
 	"fmt"
 
-	"github.com/mislavperi/gem-lang/code"
-	"github.com/mislavperi/gem-lang/compiler"
-	"github.com/mislavperi/gem-lang/object"
+	"github.com/mislavperi/adl-lang/code"
+	"github.com/mislavperi/adl-lang/compiler"
+	"github.com/mislavperi/adl-lang/object"
 )
 
 const GlobalsSize = 65536

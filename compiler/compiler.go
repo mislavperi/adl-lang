@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/mislavperi/gem-lang/ast"
-	"github.com/mislavperi/gem-lang/code"
-	"github.com/mislavperi/gem-lang/object"
-	symboltable "github.com/mislavperi/gem-lang/symbol_table"
+	"github.com/mislavperi/adl-lang/ast"
+	"github.com/mislavperi/adl-lang/code"
+	"github.com/mislavperi/adl-lang/object"
+	symboltable "github.com/mislavperi/adl-lang/symbol_table"
 )
 
 type Compiler struct {

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"strings"
 
-	"github.com/mislavperi/gem-lang/ast"
+	"github.com/mislavperi/adl-lang/ast"
 )
 
 type Function struct {

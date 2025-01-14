@@ -3,8 +3,8 @@ package eval
 import (
 	"fmt"
 
-	"github.com/mislavperi/gem-lang/ast"
-	"github.com/mislavperi/gem-lang/object"
+	"github.com/mislavperi/adl-lang/ast"
+	"github.com/mislavperi/adl-lang/object"
 )
 
 var (

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/mislavperi/gem-lang/ast"
-	"github.com/mislavperi/gem-lang/lexer"
+	"github.com/mislavperi/adl-lang/ast"
+	"github.com/mislavperi/adl-lang/lexer"
 )
 
 func TestLetStatements(t *testing.T) {

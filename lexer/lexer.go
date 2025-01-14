@@ -1,7 +1,7 @@
 package lexer
 
 import (
-	"github.com/mislavperi/gem-lang/token"
+	"github.com/mislavperi/adl-lang/token"
 )
 
 type Lexer struct {

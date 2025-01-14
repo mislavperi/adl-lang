@@ -3,9 +3,9 @@ package eval
 import (
 	"testing"
 
-	"github.com/mislavperi/gem-lang/lexer"
-	"github.com/mislavperi/gem-lang/object"
-	"github.com/mislavperi/gem-lang/parser"
+	"github.com/mislavperi/adl-lang/lexer"
+	"github.com/mislavperi/adl-lang/object"
+	"github.com/mislavperi/adl-lang/parser"
 )
 
 func TestEvalIntegerExpression(t *testing.T) {

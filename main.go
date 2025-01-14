@@ -6,35 +6,17 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/mislavperi/gem-lang/compiler"
-	"github.com/mislavperi/gem-lang/lexer"
-	"github.com/mislavperi/gem-lang/object"
-	"github.com/mislavperi/gem-lang/parser"
-	"github.com/mislavperi/gem-lang/repl"
-	symboltable "github.com/mislavperi/gem-lang/symbol_table"
-	"github.com/mislavperi/gem-lang/vm"
+	"github.com/mislavperi/adl-lang/compiler"
+	"github.com/mislavperi/adl-lang/lexer"
+	"github.com/mislavperi/adl-lang/object"
+	"github.com/mislavperi/adl-lang/parser"
+	"github.com/mislavperi/adl-lang/repl"
+	symboltable "github.com/mislavperi/adl-lang/symbol_table"
+	"github.com/mislavperi/adl-lang/vm"
 )
 
 func main() {
-	const GEM = `
-    __________
-   /          \
-  /            \
- / /\        /\ \
-/_/  \______/  \_\
-\ \   /    \   / /
- \ \ /      \ / /
-  \ /        \ /
-   \          /
-    \        /
-     \      /
-      \    /
-       \  /
-        \/	
-`
-
-	fmt.Print(GEM)
-	fmt.Print("Hello! This is the Gem programming language!\n")
+	fmt.Print("Hello! This is the ADl programming language!\n")
 
 	if len(os.Args) > 1 {
 		file := os.Args[1]

@@ -3,7 +3,7 @@ package lexer
 import (
 	"testing"
 
-	"github.com/mislavperi/gem-lang/token"
+	"github.com/mislavperi/adl-lang/token"
 )
 
 func TestNextToken(t *testing.T) {

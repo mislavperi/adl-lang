@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/mislavperi/gem-lang/ast"
-	"github.com/mislavperi/gem-lang/code"
-	"github.com/mislavperi/gem-lang/lexer"
-	"github.com/mislavperi/gem-lang/object"
-	"github.com/mislavperi/gem-lang/parser"
+	"github.com/mislavperi/adl-lang/ast"
+	"github.com/mislavperi/adl-lang/code"
+	"github.com/mislavperi/adl-lang/lexer"
+	"github.com/mislavperi/adl-lang/object"
+	"github.com/mislavperi/adl-lang/parser"
 )
 
 func TestCompilerScopes(t *testing.T) {

@@ -3,7 +3,7 @@ package object
 import (
 	"fmt"
 
-	"github.com/mislavperi/gem-lang/code"
+	"github.com/mislavperi/adl-lang/code"
 )
 
 type CompiledFunction struct {
