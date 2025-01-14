@@ -1,0 +1,2 @@
+let earlyExit = fn() { return 99; 100; };
+earlyExit();

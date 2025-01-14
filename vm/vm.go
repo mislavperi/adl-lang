@@ -211,8 +211,7 @@ func (vm *VM) Run() error {
 			numFree := code.ReadUint8(ins[instructonPointer+3:])
 			vm.currentFrame().instructonPointer += 3
 
-			err := vm.pushClosure(int(constIndex), int(numFree))
-			if err != nil {
+			if err := vm.pushClosure(int(constIndex), int(numFree)); err != nil {
 				return err
 			}
 
