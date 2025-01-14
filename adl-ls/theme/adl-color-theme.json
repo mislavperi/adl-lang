@@ -1,0 +1,27 @@
+{
+    "name": "ADL Color Theme",
+    "type": "dark",
+    "colors": {
+      "editor.foreground": "#ffffff",
+      "editor.background": "#1e1e1e"
+    },
+    "tokenColors": [
+      {
+        "scope": [
+          "keyword.control.if.adl",
+          "keyword.control.else.adl",
+          "keyword.control.return.adl"
+        ],
+        "settings": {
+          "foreground": "#800080"  // Purple
+        }
+      },
+      {
+        "scope": "entity.name.function.adl",
+        "settings": {
+          "foreground": "#0000FF"  // Blue
+        }
+      }
+    ]
+  }
+  

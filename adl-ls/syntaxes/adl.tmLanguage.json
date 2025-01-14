@@ -1,0 +1,71 @@
+{
+	"scopeName": "source.adl",
+	"patterns": [
+		{
+			"name": "keyword.control.if.adl",
+			"match": "\\b(if)\\b"
+		  },
+		  {
+			"name": "keyword.control.else.adl",
+			"match": "\\b(else)\\b"
+		  },
+		  {
+			"name": "keyword.control.return.adl",
+			"match": "\\b(return)\\b"
+		  },
+	  {
+		"name": "keyword.control.adl",
+		"match": "\\b(let|true|false)\\b"
+	  },
+	  {
+		"name": "constant.numeric.adl",
+		"match": "\\b\\d+\\b"
+	  },
+	  {
+		"name": "string.quoted.double.adl",
+		"begin": "\"",
+		"end": "\"",
+		"patterns": [
+		  {
+			"name": "constant.character.escape.adl",
+			"match": "\\\\."
+		  }
+		]
+	  },
+	  {
+		"name": "variable.name.adl",
+		"match": "\\b[a-zA-Z_][a-zA-Z0-9_]*\\b"
+	  },
+	  {
+		"name": "comment.line.double-slash.adl",
+		"begin": "//",
+		"end": "$"
+	  },
+	  {
+		"name": "comment.block.adl",
+		"begin": "/\\*",
+		"end": "\\*/"
+	  },
+	  {
+		"name": "keyword.operator.adl",
+		"match": "(==|!=|<=|>=|=|\\+|\\-|\\*|\\/|<|>)"
+	  },
+	  {
+		"name": "punctuation.separator.adl",
+		"match": "(,|;|:)"
+	  },
+	  {
+		"name": "punctuation.section.adl",
+		"match": "(\\{|\\}|\\(|\\)|\\[|\\])"
+	  }
+	],
+	"repository": {},
+	"themes": [
+		{
+		  "label": "ADL Color Theme",
+		  "uiTheme": "vs-dark",
+		  "path": "./themes/adl-color-theme.json"
+		}
+	  ]
+  }
+  

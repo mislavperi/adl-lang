@@ -32,7 +32,7 @@ func main() {
 
 func executeFile(filename string) error {
 	if filepath.Ext(filename) != ".adl" {
-		return fmt.Errorf("invalid file extension, expected .gl")
+		return fmt.Errorf("invalid file extension, expected .adl")
 	}
 
 	content, err := os.ReadFile(filename)
