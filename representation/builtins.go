@@ -1,4 +1,4 @@
-package object
+package representation
 
 import "fmt"
 
@@ -8,7 +8,7 @@ var Builtins = []struct {
 }{
 	{
 		"len",
-		&Builtin{Fn: func(args ...Object) Object {
+		&Builtin{Fn: func(args ...Representation) Representation {
 			if len(args) != 1 {
 				return newError("wrong number of arguments. got=%d, want=1", len(args))
 			}
@@ -28,7 +28,7 @@ var Builtins = []struct {
 		"out",
 		&Builtin{
 
-			Fn: func(args ...Object) Object {
+			Fn: func(args ...Representation) Representation {
 				for _, arg := range args {
 					fmt.Println(arg.Inspect())
 				}
@@ -40,11 +40,11 @@ var Builtins = []struct {
 		"first",
 		&Builtin{
 
-			Fn: func(args ...Object) Object {
+			Fn: func(args ...Representation) Representation {
 				if len(args) != 1 {
 					return newError("wrong number of arguments, got=%d, want=1", len(args))
 				}
-				if args[0].Type() != ARRAY_OBJ {
+				if args[0].Type() != ARRAY_REPR {
 					return newError("argument to `first` must be an array, got %s", args[0].Type())
 				}
 
@@ -61,11 +61,11 @@ var Builtins = []struct {
 		"last",
 		&Builtin{
 
-			Fn: func(args ...Object) Object {
+			Fn: func(args ...Representation) Representation {
 				if len(args) != 1 {
 					return newError("wrong number of arguments, got=%d, want=1", len(args))
 				}
-				if args[0].Type() != ARRAY_OBJ {
+				if args[0].Type() != ARRAY_REPR {
 					return newError("argument to `last` must be an array, got %s", args[0].Type())
 				}
 
@@ -82,18 +82,18 @@ var Builtins = []struct {
 		"rest",
 		&Builtin{
 
-			Fn: func(args ...Object) Object {
+			Fn: func(args ...Representation) Representation {
 				if len(args) != 1 {
 					return newError("wrong number of arguments, got=%d, want=1", len(args))
 				}
-				if args[0].Type() != ARRAY_OBJ {
+				if args[0].Type() != ARRAY_REPR {
 					return newError("argument to `rest` must be an array, got %s", args[0].Type())
 				}
 
 				arr := args[0].(*Array)
 				length := len(arr.Elements)
 				if length > 0 {
-					restArray := make([]Object, length-1)
+					restArray := make([]Representation, length-1)
 					copy(restArray, arr.Elements[1:length])
 					return &Array{Elements: restArray}
 				}
@@ -107,18 +107,18 @@ var Builtins = []struct {
 		"push",
 		&Builtin{
 
-			Fn: func(args ...Object) Object {
+			Fn: func(args ...Representation) Representation {
 				if len(args) != 2 {
 					return newError("wrong number of arguments, got=%d, want=2", len(args))
 				}
-				if args[0].Type() != ARRAY_OBJ {
+				if args[0].Type() != ARRAY_REPR {
 					return newError("argument to `push` must be an array, got %s", args[0].Type())
 				}
 
 				arr := args[0].(*Array)
 				length := len(arr.Elements)
 
-				newArray := make([]Object, length+1)
+				newArray := make([]Representation, length+1)
 				copy(newArray, arr.Elements)
 				newArray[length] = args[1]
 

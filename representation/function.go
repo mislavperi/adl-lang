@@ -1,4 +1,4 @@
-package object
+package representation
 
 import (
 	"bytes"
@@ -13,7 +13,7 @@ type Function struct {
 	Env        *Environment
 }
 
-func (f *Function) Type() ObjectType { return FUNCTION_OBJ }
+func (f *Function) Type() RepresentationType { return FUNCTION_REPR }
 func (f *Function) Inspect() string {
 	var out bytes.Buffer
 	params := []string{}

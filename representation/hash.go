@@ -1,4 +1,4 @@
-package object
+package representation
 
 import (
 	"bytes"
@@ -7,15 +7,15 @@ import (
 )
 
 type HashPair struct {
-	Key   Object
-	Value Object
+	Key   Representation
+	Value Representation
 }
 
 type Hash struct {
 	Pairs map[HashKey]HashPair
 }
 
-func (h *Hash) Type() ObjectType { return HASH_OBJ }
+func (h *Hash) Type() RepresentationType { return HASH_REPR }
 func (h *Hash) Inspect() string {
 	var out bytes.Buffer
 	pairs := []string{}

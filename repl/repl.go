@@ -7,7 +7,7 @@ import (
 
 	"github.com/mislavperi/adl-lang/compiler"
 	"github.com/mislavperi/adl-lang/lexer"
-	"github.com/mislavperi/adl-lang/object"
+	"github.com/mislavperi/adl-lang/representation"
 	"github.com/mislavperi/adl-lang/parser"
 	symboltable "github.com/mislavperi/adl-lang/symbol_table"
 	"github.com/mislavperi/adl-lang/vm"
@@ -18,11 +18,11 @@ const PROMPT = ">>"
 func Start(in io.Reader, out io.Writer) {
 	scanner := bufio.NewScanner(in)
 
-	constants := []object.Object{}
-	globals := make([]object.Object, vm.GlobalsSize)
+	constants := []representation.Representation{}
+	globals := make([]representation.Representation, vm.GlobalsSize)
 	symbolTable := symboltable.NewSymbolTable()
 
-	for index, builtin := range object.Builtins {
+	for index, builtin := range representation.Builtins {
 		symbolTable.DefineBuiltin(index, builtin.Name)
 	}
 

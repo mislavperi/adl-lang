@@ -7,8 +7,8 @@ import (
 	"github.com/mislavperi/adl-lang/ast"
 	"github.com/mislavperi/adl-lang/code"
 	"github.com/mislavperi/adl-lang/lexer"
-	"github.com/mislavperi/adl-lang/object"
 	"github.com/mislavperi/adl-lang/parser"
+	"github.com/mislavperi/adl-lang/representation"
 )
 
 func TestCompilerScopes(t *testing.T) {
@@ -1037,7 +1037,7 @@ func concatInstructions(s []code.Instructions) code.Instructions {
 func testConstants(
 	t *testing.T,
 	expected []interface{},
-	actual []object.Object,
+	actual []representation.Representation,
 ) error {
 	if len(expected) != len(actual) {
 		return fmt.Errorf("wrong number of constants. got=%d, want=%d",
@@ -1047,19 +1047,19 @@ func testConstants(
 	for i, constant := range expected {
 		switch constant := constant.(type) {
 		case string:
-			err := testStringObject(constant, actual[i])
+			err := testStringrepresentation(constant, actual[i])
 			if err != nil {
-				return fmt.Errorf("constant %d - testStringObject failed: %s",
+				return fmt.Errorf("constant %d - testStringrepresentation failed: %s",
 					i, err)
 			}
 		case int:
-			err := testIntegerObject(int64(constant), actual[i])
+			err := testIntegerrepresentation(int64(constant), actual[i])
 			if err != nil {
-				return fmt.Errorf("constant %d - testIntegerObject failed: %s",
+				return fmt.Errorf("constant %d - testIntegerrepresentation failed: %s",
 					i, err)
 			}
 		case []code.Instructions:
-			fn, ok := actual[i].(*object.CompiledFunction)
+			fn, ok := actual[i].(*representation.CompiledFunction)
 			if !ok {
 				return fmt.Errorf("constant %d - not a function: %T",
 					i, actual[i])
@@ -1076,30 +1076,30 @@ func testConstants(
 	return nil
 }
 
-func testIntegerObject(expected int64, actual object.Object) error {
-	result, ok := actual.(*object.Integer)
+func testIntegerrepresentation(expected int64, actual representation.Representation) error {
+	result, ok := actual.(*representation.Integer)
 	if !ok {
-		return fmt.Errorf("object is not Integer. got=%T (%+v)",
+		return fmt.Errorf("representation is not Integer. got=%T (%+v)",
 			actual, actual)
 	}
 
 	if result.Value != expected {
-		return fmt.Errorf("object has wrong value. got=%d, want=%d",
+		return fmt.Errorf("representation has wrong value. got=%d, want=%d",
 			result.Value, expected)
 	}
 
 	return nil
 }
 
-func testStringObject(expected string, actual object.Object) error {
-	result, ok := actual.(*object.String)
+func testStringrepresentation(expected string, actual representation.Representation) error {
+	result, ok := actual.(*representation.String)
 	if !ok {
-		return fmt.Errorf("object is not String. got=%T (%+v)",
+		return fmt.Errorf("representation is not String. got=%T (%+v)",
 			actual, actual)
 	}
 
 	if result.Value != expected {
-		return fmt.Errorf("object has wrong value. got=%q, want=%q",
+		return fmt.Errorf("representation has wrong value. got=%q, want=%q",
 			result.Value, expected)
 	}
 

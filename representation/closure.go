@@ -1,13 +1,13 @@
-package object
+package representation
 
 import "fmt"
 
 type Closure struct {
 	Fn   *CompiledFunction
-	Free []Object
+	Free []Representation
 }
 
-func (c *Closure) Type() ObjectType { return CLOSURE_OBJ }
+func (c *Closure) Type() RepresentationType { return CLOSURE_REPR }
 func (c *Closure) Inspect() string {
 	return fmt.Sprintf("Closure[%p]", c)
 }

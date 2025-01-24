@@ -1,4 +1,4 @@
-package object
+package representation
 
 import (
 	"fmt"
@@ -12,7 +12,7 @@ type CompiledFunction struct {
 	NumParameters int
 }
 
-func (cf *CompiledFunction) Type() ObjectType { return COMPILED_FUNCTION_OBJ }
+func (cf *CompiledFunction) Type() RepresentationType { return COMPILED_FUNCTION_REPR }
 func (cf *CompiledFunction) Inspect() string {
 	return fmt.Sprintf("CompiledFunction[%p]", cf)
 }

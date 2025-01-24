@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/mislavperi/adl-lang/lexer"
-	"github.com/mislavperi/adl-lang/object"
 	"github.com/mislavperi/adl-lang/parser"
+	"github.com/mislavperi/adl-lang/representation"
 )
 
 func TestEvalIntegerExpression(t *testing.T) {
@@ -31,26 +31,26 @@ func TestEvalIntegerExpression(t *testing.T) {
 	}
 	for _, tt := range tests {
 		evaluated := testEval(tt.input)
-		testIntegerObject(t, evaluated, tt.expected)
+		testIntegerRepresentation(t, evaluated, tt.expected)
 	}
 }
 
-func testEval(input string) object.Object {
+func testEval(input string) representation.Representation {
 	l := lexer.New(input)
 	p := parser.New(l)
 	program := p.ParseProgram()
-	environment := object.NewEnvironment()
+	environment := representation.NewEnvironment()
 	return Evaluate(program, environment)
 }
 
-func testIntegerObject(t *testing.T, obj object.Object, expected int64) bool {
-	result, ok := obj.(*object.Integer)
+func testIntegerRepresentation(t *testing.T, obj representation.Representation, expected int64) bool {
+	result, ok := obj.(*representation.Integer)
 	if !ok {
-		t.Errorf("object is not Integer. got=%T (%+v)", obj, obj)
+		t.Errorf("representation is not Integer. got=%T (%+v)", obj, obj)
 		return false
 	}
 	if result.Value != expected {
-		t.Errorf("object has wrong value. got=%d, want=%d",
+		t.Errorf("representation has wrong value. got=%d, want=%d",
 			result.Value, expected)
 		return false
 	}
@@ -84,18 +84,18 @@ func TestEvalBooleanExpression(t *testing.T) {
 	}
 	for _, tt := range tests {
 		evaluated := testEval(tt.input)
-		testBooleanObject(t, evaluated, tt.expected)
+		testBooleanRepresentation(t, evaluated, tt.expected)
 	}
 }
 
-func testBooleanObject(t *testing.T, obj object.Object, expected bool) bool {
-	result, ok := obj.(*object.Boolean)
+func testBooleanRepresentation(t *testing.T, obj representation.Representation, expected bool) bool {
+	result, ok := obj.(*representation.Boolean)
 	if !ok {
-		t.Errorf("object is not Boolean. got=%T (%+v)", obj, obj)
+		t.Errorf("representation is not Boolean. got=%T (%+v)", obj, obj)
 		return false
 	}
 	if result.Value != expected {
-		t.Errorf("object has wrong value. got=%t, want=%t",
+		t.Errorf("representation has wrong value. got=%t, want=%t",
 			result.Value, expected)
 		return false
 	}
@@ -116,7 +116,7 @@ func TestBangOperator(t *testing.T) {
 	}
 	for _, tt := range tests {
 		evaluated := testEval(tt.input)
-		testBooleanObject(t, evaluated, tt.expected)
+		testBooleanRepresentation(t, evaluated, tt.expected)
 	}
 }
 
@@ -137,9 +137,9 @@ func TestIfElseExpressions(t *testing.T) {
 		evaluated := testEval(tt.input)
 		integer, ok := tt.expected.(int)
 		if ok {
-			testIntegerObject(t, evaluated, int64(integer))
+			testIntegerRepresentation(t, evaluated, int64(integer))
 		} else {
-			testNullObject(t, evaluated)
+			testNullRepresentation(t, evaluated)
 		}
 	}
 }
@@ -167,7 +167,7 @@ func TestReturnStatements(t *testing.T) {
 	}
 	for _, tt := range tests {
 		evaluated := testEval(tt.input)
-		testIntegerObject(t, evaluated, tt.expected)
+		testIntegerRepresentation(t, evaluated, tt.expected)
 	}
 }
 
@@ -182,17 +182,17 @@ true: 5,
 false: 6
 }`
 	evaluated := testEval(input)
-	result, ok := evaluated.(*object.Hash)
+	result, ok := evaluated.(*representation.Hash)
 	if !ok {
 		t.Fatalf("Eval didn't return Hash. got=%T (%+v)", evaluated, evaluated)
 	}
-	expected := map[object.HashKey]int64{
-		(&object.String{Value: "one"}).HashKey():   1,
-		(&object.String{Value: "two"}).HashKey():   2,
-		(&object.String{Value: "three"}).HashKey(): 3,
-		(&object.Integer{Value: 4}).HashKey():      4,
-		TRUE.HashKey():                             5,
-		FALSE.HashKey():                            6,
+	expected := map[representation.HashKey]int64{
+		(&representation.String{Value: "one"}).HashKey():   1,
+		(&representation.String{Value: "two"}).HashKey():   2,
+		(&representation.String{Value: "three"}).HashKey(): 3,
+		(&representation.Integer{Value: 4}).HashKey():      4,
+		TRUE.HashKey():  5,
+		FALSE.HashKey(): 6,
 	}
 	if len(result.Pairs) != len(expected) {
 		t.Fatalf("Hash has wrong num of pairs. got=%d", len(result.Pairs))
@@ -202,13 +202,13 @@ false: 6
 		if !ok {
 			t.Errorf("no pair for given key in Pairs")
 		}
-		testIntegerObject(t, pair.Value, expectedValue)
+		testIntegerRepresentation(t, pair.Value, expectedValue)
 	}
 }
 
-func testNullObject(t *testing.T, obj object.Object) bool {
+func testNullRepresentation(t *testing.T, obj representation.Representation) bool {
 	if obj != NULL {
-		t.Errorf("object is not NULL. got=%T (%+v)", obj, obj)
+		t.Errorf("representation is not NULL. got=%T (%+v)", obj, obj)
 		return false
 	}
 	return true
@@ -269,9 +269,9 @@ func TestErrorHandling(t *testing.T) {
 	}
 	for _, tt := range tests {
 		evaluated := testEval(tt.input)
-		errObj, ok := evaluated.(*object.Error)
+		errObj, ok := evaluated.(*representation.Error)
 		if !ok {
-			t.Errorf("no error object returned. got=%T(%+v)",
+			t.Errorf("no error representation returned. got=%T(%+v)",
 				evaluated, evaluated)
 			continue
 		}
@@ -293,16 +293,16 @@ func TestLetStatements(t *testing.T) {
 		{"let a = 5; let b = a; let c = a + b + 5; c;", 15},
 	}
 	for _, tt := range tests {
-		testIntegerObject(t, testEval(tt.input), tt.expected)
+		testIntegerRepresentation(t, testEval(tt.input), tt.expected)
 	}
 }
 
-func TestFunctionObject(t *testing.T) {
+func TestFunctionRepresentation(t *testing.T) {
 	input := "fn(x) { x + 2; };"
 	evaluated := testEval(input)
-	fn, ok := evaluated.(*object.Function)
+	fn, ok := evaluated.(*representation.Function)
 	if !ok {
-		t.Fatalf("object is not Function. got=%T (%+v)", evaluated, evaluated)
+		t.Fatalf("representation is not Function. got=%T (%+v)", evaluated, evaluated)
 	}
 	if len(fn.Parameters) != 1 {
 		t.Fatalf("function has wrong parameters. Parameters=%+v",
@@ -330,7 +330,7 @@ func TestFunctionApplication(t *testing.T) {
 		{"fn(x) { x; }(5)", 5},
 	}
 	for _, tt := range tests {
-		testIntegerObject(t, testEval(tt.input), tt.expected)
+		testIntegerRepresentation(t, testEval(tt.input), tt.expected)
 	}
 }
 
@@ -341,15 +341,15 @@ fn(y) { x + y };
 };
 let addTwo = newAdder(2);
 addTwo(2);`
-	testIntegerObject(t, testEval(input), 4)
+	testIntegerRepresentation(t, testEval(input), 4)
 }
 
 func TestStringLiteral(t *testing.T) {
 	input := `"Hello World!"`
 	evaluated := testEval(input)
-	str, ok := evaluated.(*object.String)
+	str, ok := evaluated.(*representation.String)
 	if !ok {
-		t.Fatalf("object is not String. got=%T (%+v)", evaluated, evaluated)
+		t.Fatalf("representation is not String. got=%T (%+v)", evaluated, evaluated)
 	}
 	if str.Value != "Hello World!" {
 		t.Errorf("String has wrong value. got=%q", str.Value)
@@ -359,9 +359,9 @@ func TestStringLiteral(t *testing.T) {
 func TestStringConcatenation(t *testing.T) {
 	input := `"Hello" + " " + "World!"`
 	evaluated := testEval(input)
-	str, ok := evaluated.(*object.String)
+	str, ok := evaluated.(*representation.String)
 	if !ok {
-		t.Fatalf("object is not String. got=%T (%+v)", evaluated, evaluated)
+		t.Fatalf("representation is not String. got=%T (%+v)", evaluated, evaluated)
 	}
 	if str.Value != "Hello World!" {
 		t.Errorf("String has wrong value. got=%q", str.Value)
@@ -383,11 +383,11 @@ func TestBuiltinFunctions(t *testing.T) {
 		evaluated := testEval(tt.input)
 		switch expected := tt.expected.(type) {
 		case int:
-			testIntegerObject(t, evaluated, int64(expected))
+			testIntegerRepresentation(t, evaluated, int64(expected))
 		case string:
-			errObj, ok := evaluated.(*object.Error)
+			errObj, ok := evaluated.(*representation.Error)
 			if !ok {
-				t.Errorf("object is not Error. got=%T (%+v)",
+				t.Errorf("representation is not Error. got=%T (%+v)",
 					evaluated, evaluated)
 				continue
 			}
@@ -402,17 +402,17 @@ func TestBuiltinFunctions(t *testing.T) {
 func TestArrayLiterals(t *testing.T) {
 	input := "[1, 2 * 2, 3 + 3]"
 	evaluated := testEval(input)
-	result, ok := evaluated.(*object.Array)
+	result, ok := evaluated.(*representation.Array)
 	if !ok {
-		t.Fatalf("object is not Array. got=%T (%+v)", evaluated, evaluated)
+		t.Fatalf("representation is not Array. got=%T (%+v)", evaluated, evaluated)
 	}
 	if len(result.Elements) != 3 {
 		t.Fatalf("array has wrong num of elements. got=%d",
 			len(result.Elements))
 	}
-	testIntegerObject(t, result.Elements[0], 1)
-	testIntegerObject(t, result.Elements[1], 4)
-	testIntegerObject(t, result.Elements[2], 6)
+	testIntegerRepresentation(t, result.Elements[0], 1)
+	testIntegerRepresentation(t, result.Elements[1], 4)
+	testIntegerRepresentation(t, result.Elements[2], 6)
 }
 func TestArrayIndexExpressions(t *testing.T) {
 	tests := []struct {
@@ -464,9 +464,9 @@ func TestArrayIndexExpressions(t *testing.T) {
 		evaluated := testEval(tt.input)
 		integer, ok := tt.expected.(int)
 		if ok {
-			testIntegerObject(t, evaluated, int64(integer))
+			testIntegerRepresentation(t, evaluated, int64(integer))
 		} else {
-			testNullObject(t, evaluated)
+			testNullRepresentation(t, evaluated)
 		}
 	}
 }
@@ -509,9 +509,9 @@ func TestHashIndexExpressions(t *testing.T) {
 		evaluated := testEval(tt.input)
 		integer, ok := tt.expected.(int)
 		if ok {
-			testIntegerObject(t, evaluated, int64(integer))
+			testIntegerRepresentation(t, evaluated, int64(integer))
 		} else {
-			testNullObject(t, evaluated)
+			testNullRepresentation(t, evaluated)
 		}
 	}
 }

@@ -6,12 +6,12 @@ import (
 
 	"github.com/mislavperi/adl-lang/ast"
 	"github.com/mislavperi/adl-lang/code"
-	"github.com/mislavperi/adl-lang/object"
+	"github.com/mislavperi/adl-lang/representation"
 	symboltable "github.com/mislavperi/adl-lang/symbol_table"
 )
 
 type Compiler struct {
-	constants   []object.Object
+	constants   []representation.Representation
 	symbolTable *symboltable.SymbolTable
 
 	scopes     []CompilationScope
@@ -20,7 +20,7 @@ type Compiler struct {
 
 type Bytecode struct {
 	Instructions code.Instructions
-	Constants    []object.Object
+	Constants    []representation.Representation
 }
 
 type EmmitedInstruction struct {
@@ -43,19 +43,19 @@ func New() *Compiler {
 
 	symbolTable := symboltable.NewSymbolTable()
 
-	for index, builtin := range object.Builtins {
+	for index, builtin := range representation.Builtins {
 		symbolTable.DefineBuiltin(index, builtin.Name)
 	}
 
 	return &Compiler{
-		constants:   []object.Object{},
+		constants:   []representation.Representation{},
 		symbolTable: symbolTable,
 		scopes:      []CompilationScope{mainScope},
 		scopeIndex:  0,
 	}
 }
 
-func NewWithState(s *symboltable.SymbolTable, constants []object.Object) *Compiler {
+func NewWithState(s *symboltable.SymbolTable, constants []representation.Representation) *Compiler {
 	compiler := New()
 	compiler.symbolTable = s
 	compiler.constants = constants
@@ -128,7 +128,7 @@ func (c *Compiler) Compile(node ast.Node) error {
 			return fmt.Errorf("unknown operator %s: ", node.Operator)
 		}
 	case *ast.IntegerLiteral:
-		integer := &object.Integer{Value: node.Value}
+		integer := &representation.Integer{Value: node.Value}
 		c.emit(code.OpConstant, c.addConstant(integer))
 	case *ast.Boolean:
 		if node.Value {
@@ -196,7 +196,7 @@ func (c *Compiler) Compile(node ast.Node) error {
 		c.loadSymbol(symbolTable)
 
 	case *ast.StringLiteral:
-		str := &object.String{Value: node.Value}
+		str := &representation.String{Value: node.Value}
 		c.emit(code.OpConstant, c.addConstant(str))
 	case *ast.ArrayLiteral:
 		for _, el := range node.Elements {
@@ -266,7 +266,7 @@ func (c *Compiler) Compile(node ast.Node) error {
 			c.loadSymbol(s)
 		}
 
-		compiledFn := &object.CompiledFunction{Instructions: instructions, NumLocals: numLocals, NumParameters: len(node.Parameters)}
+		compiledFn := &representation.CompiledFunction{Instructions: instructions, NumLocals: numLocals, NumParameters: len(node.Parameters)}
 
 		fnIndex := c.addConstant(compiledFn)
 		c.emit(code.OpClosure, fnIndex, len(freeSymbols))
@@ -298,7 +298,7 @@ func (c *Compiler) Bytecode() *Bytecode {
 	}
 }
 
-func (c *Compiler) addConstant(obj object.Object) int {
+func (c *Compiler) addConstant(obj representation.Representation) int {
 	c.constants = append(c.constants, obj)
 	return len(c.constants) - 1
 }

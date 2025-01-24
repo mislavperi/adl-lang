@@ -3,36 +3,36 @@ package eval
 import (
 	"fmt"
 
-	"github.com/mislavperi/adl-lang/object"
+	"github.com/mislavperi/adl-lang/representation"
 )
 
-var builtins = map[string]*object.Builtin{
+var builtins = map[string]*representation.Builtin{
 	"len": {
-		Fn: func(args ...object.Object) object.Object {
+		Fn: func(args ...representation.Representation) representation.Representation {
 			if len(args) != 1 {
 				return newError("wrong number of arguments. got=%d, want=1", len(args))
 			}
 
 			switch arg := args[0].(type) {
-			case *object.Array:
-				return &object.Integer{Value: int64(len(arg.Elements))}
-			case *object.String:
-				return &object.Integer{Value: int64(len(arg.Value))}
+			case *representation.Array:
+				return &representation.Integer{Value: int64(len(arg.Elements))}
+			case *representation.String:
+				return &representation.Integer{Value: int64(len(arg.Value))}
 			default:
 				return newError("argument to `len` not supported, got %s", args[0].Type())
 			}
 		},
 	},
 	"first": {
-		Fn: func(args ...object.Object) object.Object {
+		Fn: func(args ...representation.Representation) representation.Representation {
 			if len(args) != 1 {
 				return newError("wrong number of arguments, got=%d, want=1", len(args))
 			}
-			if args[0].Type() != object.ARRAY_OBJ {
+			if args[0].Type() != representation.ARRAY_REPR {
 				return newError("argument to `first` must be an ARRAY, got %s", args[0].Type())
 			}
 
-			arr := args[0].(*object.Array)
+			arr := args[0].(*representation.Array)
 			if len(arr.Elements) > 0 {
 				return arr.Elements[0]
 			}
@@ -41,15 +41,15 @@ var builtins = map[string]*object.Builtin{
 		},
 	},
 	"last": {
-		Fn: func(args ...object.Object) object.Object {
+		Fn: func(args ...representation.Representation) representation.Representation {
 			if len(args) != 1 {
 				return newError("wrong number of arguments, got=%d, want=1", len(args))
 			}
-			if args[0].Type() != object.ARRAY_OBJ {
+			if args[0].Type() != representation.ARRAY_REPR {
 				return newError("argument to `last` must be an ARRAY, got %s", args[0].Type())
 			}
 
-			arr := args[0].(*object.Array)
+			arr := args[0].(*representation.Array)
 			if len(arr.Elements) > 0 {
 				return arr.Elements[len(arr.Elements)-1]
 			}
@@ -58,46 +58,46 @@ var builtins = map[string]*object.Builtin{
 		},
 	},
 	"rest": {
-		Fn: func(args ...object.Object) object.Object {
+		Fn: func(args ...representation.Representation) representation.Representation {
 			if len(args) != 2 {
 				return newError("wrong number of arguments, got=%d, want=2", len(args))
 			}
-			if args[0].Type() != object.ARRAY_OBJ {
+			if args[0].Type() != representation.ARRAY_REPR {
 				return newError("argument to `rest` must be an ARRAY, got %s", args[0].Type())
 			}
 
-			arr := args[0].(*object.Array)
+			arr := args[0].(*representation.Array)
 			length := len(arr.Elements)
 			if length > 0 {
-				restArray := make([]object.Object, length-1)
+				restArray := make([]representation.Representation, length-1)
 				copy(restArray, arr.Elements[1:length])
-				return &object.Array{Elements: restArray}
+				return &representation.Array{Elements: restArray}
 			}
 
 			return NULL
 		},
 	},
 	"push": {
-		Fn: func(args ...object.Object) object.Object {
+		Fn: func(args ...representation.Representation) representation.Representation {
 			if len(args) != 1 {
 				return newError("wrong number of arguments, got=%d, want=1", len(args))
 			}
-			if args[0].Type() != object.ARRAY_OBJ {
+			if args[0].Type() != representation.ARRAY_REPR {
 				return newError("argument to `rest` must be an ARRAY, got %s", args[0].Type())
 			}
 
-			arr := args[0].(*object.Array)
+			arr := args[0].(*representation.Array)
 			length := len(arr.Elements)
 
-			newArray := make([]object.Object, length+1)
+			newArray := make([]representation.Representation, length+1)
 			copy(newArray, arr.Elements)
 			newArray[length] = args[1]
 
-			return &object.Array{Elements: newArray}
+			return &representation.Array{Elements: newArray}
 		},
 	},
 	"out": {
-		Fn: func(args ...object.Object) object.Object {
+		Fn: func(args ...representation.Representation) representation.Representation {
 			for _, arg := range args {
 				fmt.Println(arg.Inspect())
 			}

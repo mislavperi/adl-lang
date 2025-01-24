@@ -4,30 +4,30 @@ import (
 	"fmt"
 
 	"github.com/mislavperi/adl-lang/ast"
-	"github.com/mislavperi/adl-lang/object"
+	"github.com/mislavperi/adl-lang/representation"
 )
 
 var (
-	NULL  = &object.Null{}
-	TRUE  = &object.Boolean{Value: true}
-	FALSE = &object.Boolean{Value: false}
+	NULL  = &representation.Null{}
+	TRUE  = &representation.Boolean{Value: true}
+	FALSE = &representation.Boolean{Value: false}
 )
 
-func isError(obj object.Object) bool {
-	return obj != nil && obj.Type() == object.ERROR_OBJ
+func isError(obj representation.Representation) bool {
+	return obj != nil && obj.Type() == representation.ERROR_REPR
 }
 
-func Evaluate(node ast.Node, env *object.Environment) object.Object {
+func Evaluate(node ast.Node, env *representation.Environment) representation.Representation {
 	switch node := node.(type) {
 	case *ast.Program:
-		var result object.Object
+		var result representation.Representation
 		for _, statement := range node.Statements {
 			result = Evaluate(statement, env)
 			if result != nil {
-				if returnValue, ok := result.(*object.ReturnValue); ok {
+				if returnValue, ok := result.(*representation.ReturnValue); ok {
 					return returnValue.Value
 				}
-				if result.Type() == object.ERROR_OBJ {
+				if result.Type() == representation.ERROR_REPR {
 					return result
 				}
 			}
@@ -38,7 +38,7 @@ func Evaluate(node ast.Node, env *object.Environment) object.Object {
 		return Evaluate(node.Expression, env)
 
 	case *ast.IntegerLiteral:
-		return &object.Integer{Value: node.Value}
+		return &representation.Integer{Value: node.Value}
 
 	case *ast.Boolean:
 		if node.Value {
@@ -65,12 +65,12 @@ func Evaluate(node ast.Node, env *object.Environment) object.Object {
 				return FALSE
 			}
 		case "-":
-			if right.Type() != object.INTEGER_OBJ {
+			if right.Type() != representation.INTEGER_REPR {
 				return newError("unknown operator: -%s", right.Type())
 			}
 
-			value := right.(*object.Integer).Value
-			return &object.Integer{Value: -value}
+			value := right.(*representation.Integer).Value
+			return &representation.Integer{Value: -value}
 		default:
 			return newError("unknown operator: %s%s", node.Operator, right.Type())
 		}
@@ -91,55 +91,55 @@ func Evaluate(node ast.Node, env *object.Environment) object.Object {
 		}
 
 		switch {
-		case left.Type() == object.INTEGER_OBJ && right.Type() == object.INTEGER_OBJ:
-			leftVal := left.(*object.Integer).Value
-			rightVal := right.(*object.Integer).Value
+		case left.Type() == representation.INTEGER_REPR && right.Type() == representation.INTEGER_REPR:
+			leftVal := left.(*representation.Integer).Value
+			rightVal := right.(*representation.Integer).Value
 
 			switch node.Operator {
 			case "+":
-				return &object.Integer{Value: leftVal + rightVal}
+				return &representation.Integer{Value: leftVal + rightVal}
 			case "-":
-				return &object.Integer{Value: leftVal - rightVal}
+				return &representation.Integer{Value: leftVal - rightVal}
 			case "*":
-				return &object.Integer{Value: leftVal * rightVal}
+				return &representation.Integer{Value: leftVal * rightVal}
 			case "/":
-				return &object.Integer{Value: leftVal / rightVal}
+				return &representation.Integer{Value: leftVal / rightVal}
 			case "<":
-				return booleanToBooleanObject(leftVal < rightVal)
+				return booleanToBooleanRepresentation(leftVal < rightVal)
 			case ">":
-				return booleanToBooleanObject(leftVal > rightVal)
+				return booleanToBooleanRepresentation(leftVal > rightVal)
 			case "==":
-				return booleanToBooleanObject(leftVal == rightVal)
+				return booleanToBooleanRepresentation(leftVal == rightVal)
 			case "!=":
-				return booleanToBooleanObject(leftVal != rightVal)
+				return booleanToBooleanRepresentation(leftVal != rightVal)
 			default:
 				return newError("unknown operator: %s %s %s", left.Type(), node.Operator, right.Type())
 			}
 
-		case left.Type() == object.STRING_OBJ && right.Type() == object.STRING_OBJ:
+		case left.Type() == representation.STRING_REPR && right.Type() == representation.STRING_REPR:
 			if node.Operator != "+" {
 				return newError("unknown operator: %s %s %s", left.Type(), node.Operator, right.Type())
 			}
 
-			leftVal := left.(*object.String).Value
-			rightVal := right.(*object.String).Value
-			return &object.String{Value: leftVal + rightVal}
+			leftVal := left.(*representation.String).Value
+			rightVal := right.(*representation.String).Value
+			return &representation.String{Value: leftVal + rightVal}
 
 		case node.Operator == "==":
-			return booleanToBooleanObject(left == right)
+			return booleanToBooleanRepresentation(left == right)
 		case node.Operator == "!=":
-			return booleanToBooleanObject(left != right)
+			return booleanToBooleanRepresentation(left != right)
 		default:
 			return newError("unknown operator: %s %s %s", left.Type(), node.Operator, right.Type())
 		}
 
 	case *ast.BlockStatement:
-		var result object.Object
+		var result representation.Representation
 
 		for _, statement := range node.Statements {
 			result = Evaluate(statement, env)
 			if result != nil {
-				if result.Type() == object.RETURN_VALUE_OBJ || result.Type() == object.ERROR_OBJ {
+				if result.Type() == representation.RETURN_VALUE_REPR || result.Type() == representation.ERROR_REPR {
 					return result
 				}
 			}
@@ -166,7 +166,7 @@ func Evaluate(node ast.Node, env *object.Environment) object.Object {
 		if isError(val) {
 			return val
 		}
-		return &object.ReturnValue{Value: val}
+		return &representation.ReturnValue{Value: val}
 
 	case *ast.LetStatement:
 		val := Evaluate(node.Value, env)
@@ -190,7 +190,7 @@ func Evaluate(node ast.Node, env *object.Environment) object.Object {
 	case *ast.FnLiteral:
 		parameters := node.Parameters
 		body := node.Body
-		return &object.Function{Parameters: parameters, Env: env, Body: body}
+		return &representation.Function{Parameters: parameters, Env: env, Body: body}
 
 	case *ast.CallExpression:
 		function := Evaluate(node.Function, env)
@@ -204,31 +204,31 @@ func Evaluate(node ast.Node, env *object.Environment) object.Object {
 		}
 
 		switch fn := function.(type) {
-		case *object.Function:
-			extendedEnv := object.NewEnclosedEnvironment(fn.Env)
+		case *representation.Function:
+			extendedEnv := representation.NewEnclosedEnvironment(fn.Env)
 			for paramIdx, param := range fn.Parameters {
 				extendedEnv.Set(param.Value, args[paramIdx])
 			}
 			evaluated := Evaluate(fn.Body, extendedEnv)
-			if returnValue, ok := evaluated.(*object.ReturnValue); ok {
+			if returnValue, ok := evaluated.(*representation.ReturnValue); ok {
 				return returnValue.Value
 			}
 			return evaluated
-		case *object.Builtin:
+		case *representation.Builtin:
 			return fn.Fn(args...)
 		default:
 			return newError("not a function: %s", fn.Type())
 		}
 
 	case *ast.StringLiteral:
-		return &object.String{Value: node.Value}
+		return &representation.String{Value: node.Value}
 
 	case *ast.ArrayLiteral:
 		elements := evaluateExpressions(node.Elements, env)
 		if len(elements) == 1 && isError(elements[0]) {
 			return elements[0]
 		}
-		return &object.Array{Elements: elements}
+		return &representation.Array{Elements: elements}
 
 	case *ast.IndexExpression:
 		left := Evaluate(node.Left, env)
@@ -241,22 +241,22 @@ func Evaluate(node ast.Node, env *object.Environment) object.Object {
 		}
 
 		switch {
-		case left.Type() == object.ARRAY_OBJ && index.Type() == object.INTEGER_OBJ:
-			arrayObject := left.(*object.Array)
-			idx := index.(*object.Integer).Value
-			max := int64(len(arrayObject.Elements) - 1)
+		case left.Type() == representation.ARRAY_REPR && index.Type() == representation.INTEGER_REPR:
+			arrayRepresentation := left.(*representation.Array)
+			idx := index.(*representation.Integer).Value
+			max := int64(len(arrayRepresentation.Elements) - 1)
 			if idx < 0 || idx > max {
 				return NULL
 			}
-			return arrayObject.Elements[idx]
+			return arrayRepresentation.Elements[idx]
 
-		case left.Type() == object.HASH_OBJ:
-			hashObject := left.(*object.Hash)
-			key, ok := index.(object.Hashable)
+		case left.Type() == representation.HASH_REPR:
+			hashRepresentation := left.(*representation.Hash)
+			key, ok := index.(representation.Hashable)
 			if !ok {
 				return newError("unusable as hash key: %s", index.Type())
 			}
-			if pair, ok := hashObject.Pairs[key.HashKey()]; ok {
+			if pair, ok := hashRepresentation.Pairs[key.HashKey()]; ok {
 				return pair.Value
 			}
 			return NULL
@@ -266,7 +266,7 @@ func Evaluate(node ast.Node, env *object.Environment) object.Object {
 		}
 
 	case *ast.HashLiteral:
-		pairs := make(map[object.HashKey]object.HashPair)
+		pairs := make(map[representation.HashKey]representation.HashPair)
 
 		for keyNode, valueNode := range node.Pairs {
 			key := Evaluate(keyNode, env)
@@ -274,7 +274,7 @@ func Evaluate(node ast.Node, env *object.Environment) object.Object {
 				return key
 			}
 
-			hashKey, ok := key.(object.Hashable)
+			hashKey, ok := key.(representation.Hashable)
 			if !ok {
 				return newError("unusable as a hash key:  %s", key.Type())
 			}
@@ -285,29 +285,29 @@ func Evaluate(node ast.Node, env *object.Environment) object.Object {
 			}
 
 			hashed := hashKey.HashKey()
-			pairs[hashed] = object.HashPair{Key: key, Value: value}
+			pairs[hashed] = representation.HashPair{Key: key, Value: value}
 		}
 
-		return &object.Hash{Pairs: pairs}
+		return &representation.Hash{Pairs: pairs}
 	}
 
 	return nil
 }
 
-func booleanToBooleanObject(input bool) *object.Boolean {
+func booleanToBooleanRepresentation(input bool) *representation.Boolean {
 	if input {
 		return TRUE
 	}
 	return FALSE
 }
 
-func evaluateExpressions(expressions []ast.Expression, env *object.Environment) []object.Object {
-	var result []object.Object
+func evaluateExpressions(expressions []ast.Expression, env *representation.Environment) []representation.Representation {
+	var result []representation.Representation
 
 	for _, expr := range expressions {
 		evaluated := Evaluate(expr, env)
 		if isError(evaluated) {
-			return []object.Object{evaluated}
+			return []representation.Representation{evaluated}
 		}
 		result = append(result, evaluated)
 	}
@@ -315,7 +315,7 @@ func evaluateExpressions(expressions []ast.Expression, env *object.Environment) 
 	return result
 }
 
-func isTruthy(obj object.Object) bool {
+func isTruthy(obj representation.Representation) bool {
 	switch obj {
 	case NULL:
 		return false
@@ -328,6 +328,6 @@ func isTruthy(obj object.Object) bool {
 	}
 }
 
-func newError(format string, a ...interface{}) *object.Error {
-	return &object.Error{Message: fmt.Sprintf(format, a...)}
+func newError(format string, a ...interface{}) *representation.Error {
+	return &representation.Error{Message: fmt.Sprintf(format, a...)}
 }

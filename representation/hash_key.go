@@ -1,7 +1,7 @@
-package object
+package representation
 
 type HashKey struct {
-	Type  ObjectType
+	Type  RepresentationType
 	Value uint64
 }
 

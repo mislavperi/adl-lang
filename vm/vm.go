@@ -5,23 +5,23 @@ import (
 
 	"github.com/mislavperi/adl-lang/code"
 	"github.com/mislavperi/adl-lang/compiler"
-	"github.com/mislavperi/adl-lang/object"
+	"github.com/mislavperi/adl-lang/representation"
 )
 
 const GlobalsSize = 65536
 const StackSize = 2048
 const MaxFrames = 1024
 
-var True = &object.Boolean{Value: true}
-var False = &object.Boolean{Value: false}
-var Null = &object.Null{}
+var True = &representation.Boolean{Value: true}
+var False = &representation.Boolean{Value: false}
+var Null = &representation.Null{}
 
 type VM struct {
-	constants []object.Object
+	constants []representation.Representation
 
-	globals []object.Object
+	globals []representation.Representation
 
-	stack        []object.Object
+	stack        []representation.Representation
 	stackPointer int
 
 	frames      []*Frame
@@ -29,8 +29,8 @@ type VM struct {
 }
 
 func New(bytecode *compiler.Bytecode) *VM {
-	mainFn := &object.CompiledFunction{Instructions: bytecode.Instructions}
-	mainClosure := &object.Closure{Fn: mainFn}
+	mainFn := &representation.CompiledFunction{Instructions: bytecode.Instructions}
+	mainClosure := &representation.Closure{Fn: mainFn}
 	mainFrame := NewFrame(mainClosure, 0)
 
 	frames := make([]*Frame, MaxFrames)
@@ -39,9 +39,9 @@ func New(bytecode *compiler.Bytecode) *VM {
 	return &VM{
 		constants: bytecode.Constants,
 
-		globals: make([]object.Object, GlobalsSize),
+		globals: make([]representation.Representation, GlobalsSize),
 
-		stack:        make([]object.Object, StackSize),
+		stack:        make([]representation.Representation, StackSize),
 		stackPointer: 0,
 
 		frames:      frames,
@@ -49,7 +49,7 @@ func New(bytecode *compiler.Bytecode) *VM {
 	}
 }
 
-func NewWithGlobalStore(bytecode *compiler.Bytecode, s []object.Object) *VM {
+func NewWithGlobalStore(bytecode *compiler.Bytecode, s []representation.Representation) *VM {
 	vm := New(bytecode)
 	vm.globals = s
 	return vm
@@ -200,7 +200,7 @@ func (vm *VM) Run() error {
 			builtinIndex := code.ReadUint8(ins[instructonPointer+1:])
 			vm.currentFrame().instructonPointer += 1
 
-			definition := object.Builtins[builtinIndex]
+			definition := representation.Builtins[builtinIndex]
 
 			err := vm.push(definition.Builtin)
 			if err != nil {
@@ -237,11 +237,11 @@ func (vm *VM) Run() error {
 	return nil
 }
 
-func (vm *VM) LastPoppedStackElem() object.Object {
+func (vm *VM) LastPoppedStackElem() representation.Representation {
 	return vm.stack[vm.stackPointer]
 }
 
-func (vm *VM) push(o object.Object) error {
+func (vm *VM) push(o representation.Representation) error {
 	if vm.stackPointer >= StackSize {
 		return fmt.Errorf("stack overflow")
 	}
@@ -252,7 +252,7 @@ func (vm *VM) push(o object.Object) error {
 	return nil
 }
 
-func (vm *VM) pop() object.Object {
+func (vm *VM) pop() representation.Representation {
 	o := vm.stack[vm.stackPointer-1]
 	vm.stackPointer--
 	return o
@@ -267,19 +267,19 @@ func (vm *VM) executeBinaryOperation(op code.Opcode) error {
 
 	switch {
 
-	case leftType == object.INTEGER_OBJ && right.Type() == object.INTEGER_OBJ:
+	case leftType == representation.INTEGER_REPR && right.Type() == representation.INTEGER_REPR:
 		return vm.executeBinaryIntegerOperation(left, op, right)
 
-	case leftType == object.STRING_OBJ && right.Type() == object.STRING_OBJ:
+	case leftType == representation.STRING_REPR && right.Type() == representation.STRING_REPR:
 		return vm.executeBinaryStringOperation(left, op, right)
 	default:
 		return fmt.Errorf("unsupported type for binary operation: %s %s", leftType, rightType)
 	}
 }
 
-func (vm *VM) executeBinaryIntegerOperation(left object.Object, operator code.Opcode, right object.Object) error {
-	leftValue := left.(*object.Integer).Value
-	rightValue := right.(*object.Integer).Value
+func (vm *VM) executeBinaryIntegerOperation(left representation.Representation, operator code.Opcode, right representation.Representation) error {
+	leftValue := left.(*representation.Integer).Value
+	rightValue := right.(*representation.Integer).Value
 
 	var result int64
 
@@ -296,12 +296,12 @@ func (vm *VM) executeBinaryIntegerOperation(left object.Object, operator code.Op
 		return fmt.Errorf("unknown integer operator: %d", operator)
 	}
 
-	return vm.push(&object.Integer{Value: result})
+	return vm.push(&representation.Integer{Value: result})
 }
 
-func (vm *VM) executeBinaryStringOperation(left object.Object, operator code.Opcode, right object.Object) error {
-	leftValue := left.(*object.String).Value
-	rightValue := right.(*object.String).Value
+func (vm *VM) executeBinaryStringOperation(left representation.Representation, operator code.Opcode, right representation.Representation) error {
+	leftValue := left.(*representation.String).Value
+	rightValue := right.(*representation.String).Value
 
 	var result string
 
@@ -312,21 +312,21 @@ func (vm *VM) executeBinaryStringOperation(left object.Object, operator code.Opc
 		return fmt.Errorf("unknown string operator: %d", operator)
 	}
 
-	return vm.push(&object.String{Value: result})
+	return vm.push(&representation.String{Value: result})
 }
 
 func (vm *VM) executeComparison(op code.Opcode) error {
 	right := vm.pop()
 	left := vm.pop()
 
-	if left.Type() == object.INTEGER_OBJ && right.Type() == object.INTEGER_OBJ {
+	if left.Type() == representation.INTEGER_REPR && right.Type() == representation.INTEGER_REPR {
 		return vm.executeIntegerComparison(left, op, right)
 	}
 	switch op {
 	case code.OpEqual:
-		return vm.push(nativeBoolToBooleanObject(right == left))
+		return vm.push(nativeBoolToBooleanrepresentation(right == left))
 	case code.OpNotEqual:
-		return vm.push(nativeBoolToBooleanObject(right != left))
+		return vm.push(nativeBoolToBooleanrepresentation(right != left))
 	default:
 		return fmt.Errorf("unknown operator: %d (%s %s)",
 			op, left.Type(), right.Type())
@@ -334,17 +334,17 @@ func (vm *VM) executeComparison(op code.Opcode) error {
 
 }
 
-func (vm *VM) executeIntegerComparison(left object.Object, operator code.Opcode, right object.Object) error {
-	leftValue := left.(*object.Integer).Value
-	rightValue := right.(*object.Integer).Value
+func (vm *VM) executeIntegerComparison(left representation.Representation, operator code.Opcode, right representation.Representation) error {
+	leftValue := left.(*representation.Integer).Value
+	rightValue := right.(*representation.Integer).Value
 
 	switch operator {
 	case code.OpEqual:
-		return vm.push(nativeBoolToBooleanObject(rightValue == leftValue))
+		return vm.push(nativeBoolToBooleanrepresentation(rightValue == leftValue))
 	case code.OpNotEqual:
-		return vm.push(nativeBoolToBooleanObject(rightValue != leftValue))
+		return vm.push(nativeBoolToBooleanrepresentation(rightValue != leftValue))
 	case code.OpGreaterThan:
-		return vm.push(nativeBoolToBooleanObject(leftValue > rightValue))
+		return vm.push(nativeBoolToBooleanrepresentation(leftValue > rightValue))
 	default:
 		return fmt.Errorf("unknown operator: %d", operator)
 	}
@@ -368,47 +368,47 @@ func (vm *VM) executeBangOperator() error {
 func (vm *VM) executeMinusOperator() error {
 	operand := vm.pop()
 
-	if operand.Type() != object.INTEGER_OBJ {
+	if operand.Type() != representation.INTEGER_REPR {
 		return fmt.Errorf("unsupported type for negation: %s", operand.Type())
 	}
 
-	value := operand.(*object.Integer).Value
-	return vm.push(&object.Integer{Value: -value})
+	value := operand.(*representation.Integer).Value
+	return vm.push(&representation.Integer{Value: -value})
 }
 
-func (vm *VM) executeIndexExpression(left object.Object, index object.Object) error {
+func (vm *VM) executeIndexExpression(left representation.Representation, index representation.Representation) error {
 	switch {
-	case left.Type() == object.ARRAY_OBJ && index.Type() == object.INTEGER_OBJ:
+	case left.Type() == representation.ARRAY_REPR && index.Type() == representation.INTEGER_REPR:
 		return vm.executeArrayIndex(left, index)
 
-	case left.Type() == object.HASH_OBJ:
+	case left.Type() == representation.HASH_REPR:
 		return vm.executeHashIndex(left, index)
 	default:
 		return fmt.Errorf("index operator not supported: %s", left.Type())
 	}
 }
 
-func (vm *VM) executeArrayIndex(array object.Object, index object.Object) error {
-	arrayObject := array.(*object.Array)
-	i := index.(*object.Integer).Value
-	max := int64(len(arrayObject.Elements) - 1)
+func (vm *VM) executeArrayIndex(array representation.Representation, index representation.Representation) error {
+	arrayrepresentation := array.(*representation.Array)
+	i := index.(*representation.Integer).Value
+	max := int64(len(arrayrepresentation.Elements) - 1)
 
 	if i < 0 || i > max {
 		return vm.push(Null)
 	}
 
-	return vm.push(arrayObject.Elements[i])
+	return vm.push(arrayrepresentation.Elements[i])
 }
 
-func (vm *VM) executeHashIndex(hash object.Object, index object.Object) error {
-	hashObject := hash.(*object.Hash)
+func (vm *VM) executeHashIndex(hash representation.Representation, index representation.Representation) error {
+	hashrepresentation := hash.(*representation.Hash)
 
-	key, ok := index.(object.Hashable)
+	key, ok := index.(representation.Hashable)
 	if !ok {
 		return fmt.Errorf("unusable as hash key: %s", index.Type())
 	}
 
-	pair, ok := hashObject.Pairs[key.HashKey()]
+	pair, ok := hashrepresentation.Pairs[key.HashKey()]
 	if !ok {
 		return vm.push(Null)
 	}
@@ -416,25 +416,25 @@ func (vm *VM) executeHashIndex(hash object.Object, index object.Object) error {
 	return vm.push(pair.Value)
 }
 
-func (vm *VM) buildArray(startIndex int, endIndex int) object.Object {
-	elements := make([]object.Object, endIndex-startIndex)
+func (vm *VM) buildArray(startIndex int, endIndex int) representation.Representation {
+	elements := make([]representation.Representation, endIndex-startIndex)
 	for i := startIndex; i < endIndex; i++ {
 		elements[i-startIndex] = vm.stack[i]
 	}
 
-	return &object.Array{Elements: elements}
+	return &representation.Array{Elements: elements}
 
 }
 
-func (vm *VM) buildHash(startIndex int, endIndex int) (object.Object, error) {
-	hashedPairs := make(map[object.HashKey]object.HashPair)
+func (vm *VM) buildHash(startIndex int, endIndex int) (representation.Representation, error) {
+	hashedPairs := make(map[representation.HashKey]representation.HashPair)
 
 	for i := startIndex; i < endIndex; i += 2 {
 		key := vm.stack[i]
 		value := vm.stack[i+1]
 
-		pair := object.HashPair{Key: key, Value: value}
-		hashKey, ok := key.(object.Hashable)
+		pair := representation.HashPair{Key: key, Value: value}
+		hashKey, ok := key.(representation.Hashable)
 		if !ok {
 			return nil, fmt.Errorf("unusable as hash key: %s", key.Type())
 		}
@@ -442,10 +442,10 @@ func (vm *VM) buildHash(startIndex int, endIndex int) (object.Object, error) {
 		hashedPairs[hashKey.HashKey()] = pair
 	}
 
-	return &object.Hash{Pairs: hashedPairs}, nil
+	return &representation.Hash{Pairs: hashedPairs}, nil
 }
 
-func (vm *VM) callBuiltin(builtin *object.Builtin, argumentNumber int) error {
+func (vm *VM) callBuiltin(builtin *representation.Builtin, argumentNumber int) error {
 	args := vm.stack[vm.stackPointer-argumentNumber : vm.stackPointer]
 
 	results := builtin.Fn(args...)
@@ -460,7 +460,7 @@ func (vm *VM) callBuiltin(builtin *object.Builtin, argumentNumber int) error {
 	return nil
 }
 
-func (vm *VM) callClosure(closure *object.Closure, argumentNumbers int) error {
+func (vm *VM) callClosure(closure *representation.Closure, argumentNumbers int) error {
 	if argumentNumbers != closure.Fn.NumParameters {
 		return fmt.Errorf("wrong number of arguments: want=%d, got=%d",
 			closure.Fn.NumParameters, argumentNumbers)
@@ -477,9 +477,9 @@ func (vm *VM) callClosure(closure *object.Closure, argumentNumbers int) error {
 func (vm *VM) executeCall(argumentNumber int) error {
 	calle := vm.stack[vm.stackPointer-1-argumentNumber]
 	switch calle := calle.(type) {
-	case *object.Closure:
+	case *representation.Closure:
 		return vm.callClosure(calle, argumentNumber)
-	case *object.Builtin:
+	case *representation.Builtin:
 		return vm.callBuiltin(calle, argumentNumber)
 	default:
 		return fmt.Errorf("calling non-function and non-built-in")
@@ -488,33 +488,33 @@ func (vm *VM) executeCall(argumentNumber int) error {
 
 func (vm *VM) pushClosure(constIndex int, numFree int) error {
 	constant := vm.constants[constIndex]
-	fn, ok := constant.(*object.CompiledFunction)
+	fn, ok := constant.(*representation.CompiledFunction)
 	if !ok {
 		return fmt.Errorf("not a function: %+v", constant)
 	}
 
-	free := make([]object.Object, numFree)
+	free := make([]representation.Representation, numFree)
 	for i := 0; i < numFree; i++ {
 		free[i] = vm.stack[vm.stackPointer-numFree+i]
 	}
 	vm.stackPointer = vm.stackPointer - numFree
 
-	closure := &object.Closure{Fn: fn, Free: free}
+	closure := &representation.Closure{Fn: fn, Free: free}
 	return vm.push(closure)
 }
 
-func nativeBoolToBooleanObject(input bool) *object.Boolean {
+func nativeBoolToBooleanrepresentation(input bool) *representation.Boolean {
 	if input {
 		return True
 	}
 	return False
 }
 
-func isTruthy(obj object.Object) bool {
+func isTruthy(obj representation.Representation) bool {
 	switch obj := obj.(type) {
-	case *object.Boolean:
+	case *representation.Boolean:
 		return obj.Value
-	case *object.Null:
+	case *representation.Null:
 		return false
 	default:
 		return true

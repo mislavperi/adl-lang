@@ -1,4 +1,4 @@
-package object
+package representation
 
 import (
 	"bytes"
@@ -6,10 +6,10 @@ import (
 )
 
 type Array struct {
-	Elements []Object
+	Elements []Representation
 }
 
-func (ao *Array) Type() ObjectType { return ARRAY_OBJ }
+func (ao *Array) Type() RepresentationType { return ARRAY_REPR }
 func (ao *Array) Inspect() string {
 	var out bytes.Buffer
 	elements := []string{}

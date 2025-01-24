@@ -7,8 +7,8 @@ import (
 	"github.com/mislavperi/adl-lang/ast"
 	"github.com/mislavperi/adl-lang/compiler"
 	"github.com/mislavperi/adl-lang/lexer"
-	"github.com/mislavperi/adl-lang/object"
 	"github.com/mislavperi/adl-lang/parser"
+	"github.com/mislavperi/adl-lang/representation"
 )
 
 func TestIntegerArithmetic(t *testing.T) {
@@ -118,20 +118,20 @@ func TestArrayLiterals(t *testing.T) {
 func TestHashLiterals(t *testing.T) {
 	tests := []vmTestCase{
 		{
-			"{}", map[object.HashKey]int64{},
+			"{}", map[representation.HashKey]int64{},
 		},
 		{
 			"{1: 2, 2: 3}",
-			map[object.HashKey]int64{
-				(&object.Integer{Value: 1}).HashKey(): 2,
-				(&object.Integer{Value: 2}).HashKey(): 3,
+			map[representation.HashKey]int64{
+				(&representation.Integer{Value: 1}).HashKey(): 2,
+				(&representation.Integer{Value: 2}).HashKey(): 3,
 			},
 		},
 		{
 			"{1 + 1: 2 * 2, 3 + 3: 4 * 4}",
-			map[object.HashKey]int64{
-				(&object.Integer{Value: 2}).HashKey(): 4,
-				(&object.Integer{Value: 6}).HashKey(): 16,
+			map[representation.HashKey]int64{
+				(&representation.Integer{Value: 2}).HashKey(): 4,
+				(&representation.Integer{Value: 6}).HashKey(): 16,
 			},
 		},
 	}
@@ -422,12 +422,12 @@ func TestBuiltinFunctions(t *testing.T) {
 		{`len("hello world")`, 11},
 		{
 			`len(1)`,
-			&object.Error{
+			&representation.Error{
 				Message: "argument to `len` not supported, got INTEGER",
 			},
 		},
 		{`len("one", "two")`,
-			&object.Error{
+			&representation.Error{
 				Message: "wrong number of arguments. got=2, want=1",
 			},
 		},
@@ -437,14 +437,14 @@ func TestBuiltinFunctions(t *testing.T) {
 		{`first([1, 2, 3])`, 1},
 		{`first([])`, Null},
 		{`first(1)`,
-			&object.Error{
+			&representation.Error{
 				Message: "argument to `first` must be an array, got INTEGER",
 			},
 		},
 		{`last([1, 2, 3])`, 3},
 		{`last([])`, Null},
 		{`last(1)`,
-			&object.Error{
+			&representation.Error{
 				Message: "argument to `last` must be an array, got INTEGER",
 			},
 		},
@@ -452,7 +452,7 @@ func TestBuiltinFunctions(t *testing.T) {
 		{`rest([])`, Null},
 		{`push([], 1)`, []int{1}},
 		{`push(1, 1)`,
-			&object.Error{
+			&representation.Error{
 				Message: "argument to `push` must be an array, got INTEGER",
 			},
 		},
@@ -617,7 +617,7 @@ func runVmTests(t *testing.T, tests []vmTestCase) {
 
 		stackElem := vm.LastPoppedStackElem()
 
-		testExpectedObject(t, tt.expected, stackElem)
+		testExpectedRepresentation(t, tt.expected, stackElem)
 	}
 }
 
@@ -627,41 +627,41 @@ func parse(input string) *ast.Program {
 	return p.ParseProgram()
 }
 
-func testExpectedObject(
+func testExpectedRepresentation(
 	t *testing.T,
 	expected interface{},
-	actual object.Object,
+	actual representation.Representation,
 ) {
 	t.Helper()
 
 	switch expected := expected.(type) {
 	case int:
-		err := testIntegerObject(int64(expected), actual)
+		err := testIntegerRepresentation(int64(expected), actual)
 		if err != nil {
-			t.Errorf("testIntegerObject failed: %s", err)
+			t.Errorf("testIntegerRepresentation failed: %s", err)
 		}
 
 	case bool:
-		err := testBooleanObject(bool(expected), actual)
+		err := testBooleanRepresentation(bool(expected), actual)
 		if err != nil {
-			t.Errorf("testBooleanObject failed: %s", err)
+			t.Errorf("testBooleanRepresentation failed: %s", err)
 		}
 
-	case *object.Null:
+	case *representation.Null:
 		if actual != Null {
-			t.Errorf("object is not Null: %T (%+v)", actual, actual)
+			t.Errorf("representation is not Null: %T (%+v)", actual, actual)
 		}
 
 	case string:
-		err := testStringObject(expected, actual)
+		err := testStringRepresentation(expected, actual)
 		if err != nil {
-			t.Errorf("testStringObject failed: %s", err)
+			t.Errorf("testStringRepresentation failed: %s", err)
 		}
 
 	case []int:
-		array, ok := actual.(*object.Array)
+		array, ok := actual.(*representation.Array)
 		if !ok {
-			t.Errorf("object not Array: %T (%+v)", actual, actual)
+			t.Errorf("representation not Array: %T (%+v)", actual, actual)
 			return
 		}
 
@@ -672,16 +672,16 @@ func testExpectedObject(
 		}
 
 		for i, expectedElem := range expected {
-			err := testIntegerObject(int64(expectedElem), array.Elements[i])
+			err := testIntegerRepresentation(int64(expectedElem), array.Elements[i])
 			if err != nil {
-				t.Errorf("testIntegerObject failed: %s", err)
+				t.Errorf("testIntegerRepresentation failed: %s", err)
 			}
 		}
 
-	case map[object.HashKey]int64:
-		hash, ok := actual.(*object.Hash)
+	case map[representation.HashKey]int64:
+		hash, ok := actual.(*representation.Hash)
 		if !ok {
-			t.Errorf("object is not Hash. got=%T (%+v)", actual, actual)
+			t.Errorf("representation is not Hash. got=%T (%+v)", actual, actual)
 			return
 		}
 
@@ -697,16 +697,16 @@ func testExpectedObject(
 				t.Errorf("no pair for given key in Pairs")
 			}
 
-			err := testIntegerObject(expectedValue, pair.Value)
+			err := testIntegerRepresentation(expectedValue, pair.Value)
 			if err != nil {
-				t.Errorf("testIntegerObject failed: %s", err)
+				t.Errorf("testIntegerRepresentation failed: %s", err)
 			}
 		}
 
-	case *object.Error:
-		errObj, ok := actual.(*object.Error)
+	case *representation.Error:
+		errObj, ok := actual.(*representation.Error)
 		if !ok {
-			t.Errorf("object is not Error: %T (%+v)", actual, actual)
+			t.Errorf("representation is not Error: %T (%+v)", actual, actual)
 			return
 		}
 		if errObj.Message != expected.Message {
@@ -716,45 +716,45 @@ func testExpectedObject(
 	}
 }
 
-func testIntegerObject(expected int64, actual object.Object) error {
-	result, ok := actual.(*object.Integer)
+func testIntegerRepresentation(expected int64, actual representation.Representation) error {
+	result, ok := actual.(*representation.Integer)
 	if !ok {
-		return fmt.Errorf("object is not Integer. got=%T (%+v)",
+		return fmt.Errorf("representation is not Integer. got=%T (%+v)",
 			actual, actual)
 	}
 
 	if result.Value != expected {
-		return fmt.Errorf("object has wrong value. got=%d, want=%d",
+		return fmt.Errorf("representation has wrong value. got=%d, want=%d",
 			result.Value, expected)
 	}
 
 	return nil
 }
 
-func testBooleanObject(expected bool, actual object.Object) error {
-	result, ok := actual.(*object.Boolean)
+func testBooleanRepresentation(expected bool, actual representation.Representation) error {
+	result, ok := actual.(*representation.Boolean)
 	if !ok {
-		return fmt.Errorf("object is not Boolean. got=%T (%+v)",
+		return fmt.Errorf("representation is not Boolean. got=%T (%+v)",
 			actual, actual)
 	}
 
 	if result.Value != expected {
-		return fmt.Errorf("object has wrong value. got=%t, want=%t",
+		return fmt.Errorf("representation has wrong value. got=%t, want=%t",
 			result.Value, expected)
 	}
 
 	return nil
 }
 
-func testStringObject(expected string, actual object.Object) error {
-	result, ok := actual.(*object.String)
+func testStringRepresentation(expected string, actual representation.Representation) error {
+	result, ok := actual.(*representation.String)
 	if !ok {
-		return fmt.Errorf("object is not String. got=%T (%+v)",
+		return fmt.Errorf("representation is not String. got=%T (%+v)",
 			actual, actual)
 	}
 
 	if result.Value != expected {
-		return fmt.Errorf("object has wrong value. got=%q, want=%q",
+		return fmt.Errorf("representation has wrong value. got=%q, want=%q",
 			result.Value, expected)
 	}
 
